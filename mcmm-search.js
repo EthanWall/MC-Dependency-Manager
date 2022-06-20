@@ -1,6 +1,7 @@
 const {Command} = require('commander');
 const inquirer = require('inquirer');
 const Curseforge = require('node-curseforge');
+const {sort_mods_search} = require('./util');
 
 const CF_KEY = process.env.CURSEFORGE_KEY;
 
@@ -71,7 +72,8 @@ program
             pageSize: 10
         };
 
-        const mods = await mc.search_mods(searchParams);
+        let mods = await mc.search_mods(searchParams);
+        mods = sort_mods_search(mods, queryString);
 
         if (!options.interactive) {
             mods.forEach(mod => {
