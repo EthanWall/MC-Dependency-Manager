@@ -1,27 +1,19 @@
-import inquirer from 'inquirer';
-import {Command} from 'commander';
-import {createRequire} from 'node:module';
-
-const require = createRequire(import.meta.url);
-
+const {Command} = require('commander');
+const inquirer = require('inquirer');
 const Curseforge = require('node-curseforge');
 
 const CF_KEY = process.env.CURSEFORGE_KEY;
-if (!CF_KEY)
-    throw 'missing env variable for CURSEFORGE_KEY';
 
 const program = new Command();
 
-const cf = new Curseforge.default(CF_KEY);
-
-function promptModChoice(mods) {
+async function promptModChoice(mods) {
     function createChoices() {
         let choices = [];
         mods.forEach(mod => {
             const choice = {
-                name: `${mod.name} \\ ${mod.summary}`,
+                name: `${mod.slug} \\ ${mod.name} \\ ${mod.summary}`,
                 value: mod,
-                short: mod.name
+                short: mod.slug
             };
             choices.push(choice);
         });
@@ -36,23 +28,67 @@ function promptModChoice(mods) {
             choices: createChoices()
         }
     ];
-    inquirer.prompt(questions).then((answers) => {
-        console.log(answers);
-    });
+
+    const answers = await inquirer.prompt(questions);
+
+    // Returns a Mod object with the chosen mod data
+    return answers.mod;
+}
+
+async function promptConfirmInstall(mod) {
+    const questions = [
+        {
+            type: 'confirm',
+            name: 'shouldInstall',
+            message: `Install ${mod.slug}?`
+        }
+    ];
+
+    const answers = await inquirer.prompt(questions);
+    return answers.shouldInstall;
 }
 
 program
     .argument('<query...>', 'search text')
-    .action(async (query, _options, _command) => {
+    .option('-i, --interactive', 'enable interactive user prompts?', false)
+    .action(async (query, options, _command) => {
+        if (!CF_KEY) {
+            console.error('missing env variable for CURSEFORGE_KEY');
+            return;
+        }
+
+        const cf = new Curseforge.default(CF_KEY);
         const mc = await cf.get_game('minecraft');
+
+        // Create a string out of an argument array
+        const queryString = query.join(' ');
+
         const searchParams = {
-            searchFilter: query,
+            searchFilter: queryString,
             classId: 6,             // Class ID for the 'Mods' category
             sortOrder: "desc",
+            sortField: 2,           // Popularity
             pageSize: 10
         };
+
         const mods = await mc.search_mods(searchParams);
-        promptModChoice(mods);
+
+        if (!options.interactive) {
+            mods.forEach(mod => {
+                console.log(`${mod.slug} \\ ${mod.name} \\ ${mod.summary}`);
+            });
+            return;
+        }
+
+        // Prompt the user to pick a mod they wish to install
+        const chosenMod = await promptModChoice(mods);
+
+        // Prompt the user to install the mod
+        if (await promptConfirmInstall(chosenMod)) {
+            console.log(`Will install ${chosenMod.slug}`);
+        } else {
+            console.log('operation cancelled');
+        }
     });
 
 program.parseAsync(process.argv);
