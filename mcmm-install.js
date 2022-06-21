@@ -1,6 +1,6 @@
 const {Command, Option} = require('commander');
 const Curseforge = require('node-curseforge');
-const {ModLoaderType} = require("node-curseforge/dist/objects/enums");
+const {ModLoaderType} = require('node-curseforge/dist/objects/enums');
 
 const CF_KEY = process.env.CURSEFORGE_KEY;
 
@@ -9,14 +9,14 @@ const program = new Command();
 program
     .argument('<slugs...>', 'shorthand name for the mod')
     .requiredOption('-v, --version <version>', 'Minecraft version string')
-    .addOption(new Option('-l, --modloader <name>', 'Minecraft modloader')
+    .addOption(new Option('-l, --modloader <name>', 'Minecraft mod loader')
         .choices(['forge', 'fabric'])
         .makeOptionMandatory())
-    .action(async (slugs, options, _command) => {
+    .action(async (slugs, options) => {
         // TODO: Install from package file
 
         if (!slugs) {
-            console.error('error: missing required argument \'slug\'');
+            console.error('error: missing required argument \'slugs\'');
             return;
         }
 
@@ -37,12 +37,19 @@ program
             return result[0];
         }));
 
-        // TODO: node-curseforge does not support the `gameVersion` and `modLoaderType` args, even though the CurseForge API does
         const getFilesParams = {
             gameVersion: options.version,
-            modLoaderType: ModLoaderType[options.modloader.toUpperCase()]
+            modLoaderType: ModLoaderType[options.modloader.toUpperCase()],
+            pageSize: 1
         };
-        const modFiles = await Promise.all(mods.map(mod => mod.get_files(getFilesParams)));
+        // Resolve size 1 array(s), each containing a ModFile? and some extra data
+        // Add the ModFile to an array if the ModFile exists
+        // Add that array to the returned array using .map()
+        // Remove any empty arrays
+        // Results in an array containing only valid ModFile's
+        const modFiles = (await Promise.all(mods.map(mod => mod.get_files(getFilesParams).then(result =>
+            result[0] ? [result[0]] : [])
+        ))).flat(1);
 
         console.log(modFiles);
     });

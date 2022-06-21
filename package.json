@@ -12,7 +12,7 @@
   "dependencies": {
     "commander": "^9.3.0",
     "inquirer": "^8.2.4",
-    "node-curseforge": "^1.0.3"
+    "node-curseforge": "^1.1.0"
   },
   "devDependencies": {
     "@types/inquirer": "^8.2.1"
