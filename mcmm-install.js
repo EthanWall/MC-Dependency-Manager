@@ -47,9 +47,8 @@ program
         // Add that array to the returned array using .map()
         // Remove any empty arrays
         // Results in an array containing only valid ModFile's
-        const modFiles = (await Promise.all(mods.map(mod => mod.get_files(getFilesParams).then(result =>
-            result[0] ? [result[0]] : [])
-        ))).flat(1);
+        const modFiles = await Promise.all(mods.map(mod => mod.get_files(getFilesParams)))
+            .then(result => result.flatMap(files => files[0] ? [files[0]] : []));
 
         console.log(modFiles);
     });
