@@ -6,8 +6,10 @@ Integrated with CurseForge, MCMM aims to make installing, updating, and removing
 ## To-do
 
 - [x] Search CurseForge for mods and filter by:
-    - [ ] Game version
-    - [ ] Modloader
+    - [x] Game version
+    - [x] Modloader
+- [ ] Determine per-project file format
+- [ ] Determine conf file format
 - [ ] Add mods to a `package.json`-style file
     - [ ] Keep track of mod dependencies
 - [ ] Download mods and their dependencies
