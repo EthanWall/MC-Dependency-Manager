@@ -31,6 +31,7 @@ program
         const searchParams = {
             classId: 6,             // Class ID for the 'Mods' category
         };
+        // TODO: Add error reporting for mods not compatible with version or mod loader
         const mods = await Promise.all(slugs.map(async slug => {
             searchParams.slug = slug;
             const result = await mc.search_mods(searchParams);
@@ -47,10 +48,21 @@ program
         // Add that array to the returned array using .map()
         // Remove any empty arrays
         // Results in an array containing only valid ModFile's
-        const modFiles = await Promise.all(mods.map(mod => mod.get_files(getFilesParams)))
-            .then(result => result.flatMap(files => files[0] ? [files[0]] : []));
+        const deps = await Promise.all(mods.map(mod => mod.get_files(getFilesParams)))
+            .then(result => result.flatMap(files => files[0] ? [files[0]] : [])) // mod files
+            .then(files => files.flatMap(file => file.dependencies)) // mod dependencies in {modId, relationType} format
+            .then(dependencies => Promise.all(dependencies.map(dep => cf.get_mod(dep.modId)))); // mod dependencies as Mod's
 
-        console.log(modFiles);
+        // TODO: Refactor into util function
+        let tempModIds = [];
+        const modsToInstall = mods.concat(deps).filter(mod => {
+            const key = mod.id;
+            const isNew = !(key in tempModIds);
+            if (isNew) tempModIds.push(key);
+            return isNew;
+        });
+
+        console.log(modsToInstall);
     });
 
 program.parseAsync(process.argv);
