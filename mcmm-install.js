@@ -1,10 +1,11 @@
 const {Command, Option} = require('commander');
-const Curseforge = require('node-curseforge');
-const {ModLoaderType} = require('node-curseforge/dist/objects/enums');
+const {Curseforge} = require('node-curseforge');
+const {ModLoaderType} = require('node-curseforge').Enums;
 
 const CF_KEY = process.env.CURSEFORGE_KEY;
 
 const program = new Command();
+const cf = new Curseforge(CF_KEY);
 
 program
     .argument('<slugs...>', 'shorthand name for the mod')
@@ -12,7 +13,7 @@ program
     .addOption(new Option('-l, --modloader <name>', 'Minecraft mod loader')
         .choices(['forge', 'fabric'])
         .makeOptionMandatory())
-    .action(async (slugs, options) => {
+    .action((slugs, options) => {
         // TODO: Install from package file
 
         if (!slugs) {
@@ -25,44 +26,45 @@ program
             return;
         }
 
-        const cf = new Curseforge.default(CF_KEY);
-        const mc = await cf.get_game('minecraft');
-
-        const searchParams = {
+        let searchParams = {
             classId: 6,             // Class ID for the 'Mods' category
         };
-        // TODO: Add error reporting for mods not compatible with version or mod loader
-        const mods = await Promise.all(slugs.map(async slug => {
-            searchParams.slug = slug;
-            const result = await mc.search_mods(searchParams);
-            return result[0];
-        }));
-
         const getFilesParams = {
             gameVersion: options.version,
             modLoaderType: ModLoaderType[options.modloader.toUpperCase()],
             pageSize: 1
         };
-        // Resolve size 1 array(s), each containing a ModFile? and some extra data
-        // Add the ModFile to an array if the ModFile exists
-        // Add that array to the returned array using .map()
-        // Remove any empty arrays
-        // Results in an array containing only valid ModFile's
-        const deps = await Promise.all(mods.map(mod => mod.get_files(getFilesParams)))
-            .then(result => result.flatMap(files => files[0] ? [files[0]] : [])) // mod files
-            .then(files => files.flatMap(file => file.dependencies)) // mod dependencies in {modId, relationType} format
-            .then(dependencies => Promise.all(dependencies.map(dep => cf.get_mod(dep.modId)))); // mod dependencies as Mod's
 
-        // TODO: Refactor into util function
-        let tempModIds = [];
-        const modsToInstall = mods.concat(deps).filter(mod => {
-            const key = mod.id;
-            const isNew = !(key in tempModIds);
-            if (isNew) tempModIds.push(key);
-            return isNew;
-        });
+        // Make a copy of the original slugs array
+        let slugsToSave = [...slugs];
 
-        console.log(modsToInstall);
+        // Get an instance of minecraft as a Game
+        cf.get_game('minecraft')
+            // Search for the mods specified by the slugs array
+            .then(mc => Promise.all(slugs.map(slug => {
+                searchParams.slug = slug;
+                return mc.search_mods(searchParams);
+            })))
+            // Array of Mod's from search
+            .then(result => result.map(item => item[0]))
+            // Get a single-item array of ModFile's from each Mod
+            // TODO: Add error reporting for mods not compatible with version or mod loader
+            .then(mods => Promise.all(mods.map(mod => mod.get_files(getFilesParams))))
+            // Add the ModFile to an array if the former exists
+            .then(result => result.flatMap(files => files[0] ? [files[0]] : []))
+            // Get mod dependencies in the {modId, relationType} format
+            .then(files => files.flatMap(file => file.dependencies))
+            // Get a Mod from each FileDependency
+            .then(dependencies => Promise.all(dependencies.map(dep => cf.get_mod(dep.modId))))
+            // Add any mod slugs that aren't already in the final array
+            .then(mods => mods.forEach(mod => {
+                const key = mod.slug;
+                if (!(key in slugsToSave))
+                    slugsToSave.push(key);
+            }))
+            .then(() => {
+                console.log(`Installing ${slugsToSave.join(', ')}`);
+            });
     });
 
-program.parseAsync(process.argv);
+program.parse(process.argv);
