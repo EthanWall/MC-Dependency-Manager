@@ -1,11 +1,10 @@
-const {Command, Option} = require('commander');
-const {Curseforge} = require('node-curseforge');
-const {ModLoaderType} = require('node-curseforge').Enums;
+import {Command, Option} from "commander";
+import Curseforge, {ModFile} from "node-curseforge";
+import {ModLoaderType} from "node-curseforge/dist/objects/enums";
 
 const CF_KEY = process.env.CURSEFORGE_KEY;
 
 const program = new Command();
-const cf = new Curseforge(CF_KEY);
 
 program
     .argument('<slugs...>', 'shorthand name for the mod')
@@ -13,7 +12,7 @@ program
     .addOption(new Option('-l, --modloader <name>', 'Minecraft mod loader')
         .choices(['forge', 'fabric'])
         .makeOptionMandatory())
-    .action((slugs, options) => {
+    .action((slugs: Array<string>, options: { version: string, modloader: "forge" | "fabric" }) => {
         // TODO: Install from package file
 
         if (!slugs) {
@@ -28,12 +27,16 @@ program
 
         let searchParams = {
             classId: 6,             // Class ID for the 'Mods' category
+            slug: ''
         };
         const getFilesParams = {
             gameVersion: options.version,
+            // @ts-ignore
             modLoaderType: ModLoaderType[options.modloader.toUpperCase()],
             pageSize: 1
         };
+
+        const cf = new Curseforge(CF_KEY);
 
         // Make a copy of the original slugs array
         let slugsToSave = [...slugs];
@@ -51,9 +54,9 @@ program
             // TODO: Add error reporting for mods not compatible with version or mod loader
             .then(mods => Promise.all(mods.map(mod => mod.get_files(getFilesParams))))
             // Add the ModFile to an array if the former exists
-            .then(result => result.flatMap(files => files[0] ? [files[0]] : []))
+            .then((result: ModFile[][]) => result.flatMap(files => files[0] ? [files[0]] : []))
             // Get mod dependencies in the {modId, relationType} format
-            .then(files => files.flatMap(file => file.dependencies))
+            .then((files) => files.flatMap(file => file.dependencies))
             // Get a Mod from each FileDependency
             .then(dependencies => Promise.all(dependencies.map(dep => cf.get_mod(dep.modId))))
             // Add any mod slugs that aren't already in the final array
