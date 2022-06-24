@@ -1,6 +1,7 @@
 import {Command, Option} from "commander";
-import Curseforge, {ModFile} from "node-curseforge";
+import {Curseforge, Mod} from "node-curseforge";
 import {ModLoaderType} from "node-curseforge/dist/objects/enums";
+import {getDependencies, getLatestModFile, getModFromSlug} from "./util";
 
 const CF_KEY = process.env.CURSEFORGE_KEY;
 
@@ -25,17 +26,6 @@ program
             return;
         }
 
-        let searchParams = {
-            classId: 6,             // Class ID for the 'Mods' category
-            slug: ''
-        };
-        const getFilesParams = {
-            gameVersion: options.version,
-            // @ts-ignore
-            modLoaderType: ModLoaderType[options.modloader.toUpperCase()],
-            pageSize: 1
-        };
-
         const cf = new Curseforge(CF_KEY);
 
         // Make a copy of the original slugs array
@@ -43,27 +33,20 @@ program
 
         // Get an instance of minecraft as a Game
         cf.get_game('minecraft')
-            // Search for the mods specified by the slugs array
-            .then(mc => Promise.all(slugs.map(slug => {
-                searchParams.slug = slug;
-                return mc.search_mods(searchParams);
-            })))
-            // Array of Mod's from search
-            .then(result => result.map(item => item[0]))
-            // Get a single-item array of ModFile's from each Mod
+            // Find a mod for each slug in the slugs array
+            .then(mc => Promise.all(slugs.map(slug => getModFromSlug(slug, mc))))
             // TODO: Add error reporting for mods not compatible with version or mod loader
-            .then(mods => Promise.all(mods.map(mod => mod.get_files(getFilesParams))))
-            // Add the ModFile to an array if the former exists
-            .then((result: ModFile[][]) => result.flatMap(files => files[0] ? [files[0]] : []))
-            // Get mod dependencies in the {modId, relationType} format
-            .then((files) => files.flatMap(file => file.dependencies))
-            // Get a Mod from each FileDependency
-            .then(dependencies => Promise.all(dependencies.map(dep => cf.get_mod(dep.modId))))
+            // Get an array containing the latest relevant ModFile for each Mod
+            .then(mods => Promise.all(mods.map(mod => getLatestModFile(mod, options.version, ModLoaderType[options.modloader.toUpperCase()]))))
+            // Get the mod dependencies
+            .then(modFiles => Promise.all(modFiles.map(file => getDependencies(file, cf))))
+            .then(deps => deps.flat(1))
             // Add any mod slugs that aren't already in the final array
-            .then(mods => mods.forEach(mod => {
+            .then((mods: Mod[]) => mods.forEach(mod => {
                 const key = mod.slug;
-                if (!(key in slugsToSave))
+                if (!slugsToSave.includes(key)) {
                     slugsToSave.push(key);
+                }
             }))
             .then(() => {
                 console.log(`Installing ${slugsToSave.join(', ')}`);
