@@ -18,15 +18,39 @@ Integrated with CurseForge, MCMM aims to make installing, updating, and removing
 - [ ] Update mods to the latest relevant version
 - [ ] Remove mods, and if necessary, their dependencies
 
-## Command Flow
+## `mcmm.json` File
 
-```mermaid
-graph TD
-A[Run `mcmm install`] --> B[Prompt mod selection]
-B --> |Selection made| C[Confirm download]
-C --> |Yes| D[Add mod to file & install]
-C --> |No| B
+`mcmm.json` should be in the `.minecraft` folder, along with the `mods` directory. MCMM uses this file to manage and
+keep record of installed mods.
+
+Below is an example `mcmm.json` file for Minecraft Version 1.16.5 with the Forge mod loader.
+The `Ice and Fire: Dragons` mod is installed, along with its dependency, `Citadel`.
+`Citadel` was installed automatically when the user installed `Ice and Fire: Dragons`
+and will be removed should the user remove `Ice and Fire: Dragons`.
+
+```json
+{
+  "version": "1.16.5",
+  "modLoader": "forge",
+  "mods": {
+    "ice-and-fire-dragons": {
+      "userMod": true,
+      "dependencies": [
+        "citadel"
+      ]
+    },
+    "citadel": {
+      "userMod": false
+    }
+  }
+}
 ```
+
+- `version`: The Minecraft version
+- `modLoader`: Either `fabric` or `forge`
+- `userMod`: `true` if the mod was installed by the user over the CLI.
+  `false` if the mod was installed as a requirement of another mod
+- `dependencies`: An array of mods that the primary mod depends on. Can be omitted if the mod has no dependencies
 
 ## Depends
 
