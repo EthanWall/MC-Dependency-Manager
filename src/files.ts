@@ -1,4 +1,6 @@
 import fs from "fs";
+import {ModLoaderType} from "node-curseforge/dist/objects/enums";
+import {formatJSON} from "./util";
 
 type Package = {
     userMod: boolean,
@@ -13,8 +15,11 @@ type PackageFile = {
 
 export const PKG_FILE_PATH = '../resources/project.json';
 
-function formatJSON(obj: object): string {
-    return JSON.stringify(obj, null, '\t');
+function validatePackageFile(obj: object): obj is PackageFile {
+    const pkgFile = (obj as PackageFile);
+    return "version" in pkgFile &&
+        "modLoader" in pkgFile &&
+        "mods" in pkgFile;
 }
 
 // TODO: Make sure functions close the file
@@ -61,9 +66,19 @@ export async function setGameVersion(gameVersion: string, file?: fs.promises.Fil
     await fs.promises.writeFile(file, formatJSON(obj));
 }
 
-// TODO: getModLoader
+export async function getModLoader(file?: fs.promises.FileHandle) {
+    file ??= await fs.promises.open(PKG_FILE_PATH, 'r');
+    const obj: PackageFile = await fs.promises.readFile(file).then(result => JSON.parse(result.toString()));
+    return ModLoaderType[obj.modLoader.toUpperCase()];
+}
 
-// TODO: setModLoader
+export async function setModLoader(modLoader: "forge" | "fabric", file?: fs.promises.FileHandle) {
+    file ??= await fs.promises.open(PKG_FILE_PATH, 'w+');
+    const obj: PackageFile = await fs.promises.readFile(file).then(result => JSON.parse(result.toString()));
+
+    obj.modLoader = modLoader;
+    await fs.promises.writeFile(file, formatJSON(obj));
+}
 
 /*
 async function createConfig(minecraftVersion: string, modLoader: "forge" | "fabric") {

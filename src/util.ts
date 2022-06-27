@@ -4,6 +4,10 @@ import {ModFileNotFoundError, ModNotFoundError} from "./errors";
 
 const MODS_CLASS_ID = 6;
 
+export function formatJSON(obj: object): string {
+    return JSON.stringify(obj, null, '\t');
+}
+
 export function sortModsSearch(index: Mod[], query: string): Mod[] {
     const formattedQuery = query.toLowerCase();
 
@@ -22,7 +26,7 @@ export function sortModsSearch(index: Mod[], query: string): Mod[] {
     }).sort((a, b) => b.points - a.points);
 }
 
-export async function getDependencies(modFile: ModFile, cf: Curseforge): Promise<Mod[]> {
+export async function getDirectDependencies(modFile: ModFile, cf: Curseforge): Promise<Mod[]> {
     // Get the mod ID's of the dependencies
     const ids = modFile.dependencies.map(dep => dep.modId);
 
@@ -60,4 +64,19 @@ export async function getModFromSlug(slug: string, mc: Game): Promise<Mod> {
     }
 
     return mods[0];
+}
+
+// TODO: Test recursive functionality
+export async function getAllDependencies(mod: Mod, gameVersion: string, modLoader: ModLoaderType, cf: Curseforge):
+    Promise<{ mod: Mod, dependencies: Mod[] }[]> {
+
+    const primaryDeps = await getLatestModFile(mod, gameVersion, modLoader).then(file => getDirectDependencies(file, cf));
+
+    const allDeps: { mod: Mod, dependencies: Mod[] }[] = [];
+    for (const dep of primaryDeps) {
+        const subDeps = await getAllDependencies(dep, gameVersion, modLoader, cf);
+        allDeps.push({mod: dep, dependencies: subDeps.map(obj => obj.mod)}, ...subDeps);
+    }
+
+    return allDeps;
 }
