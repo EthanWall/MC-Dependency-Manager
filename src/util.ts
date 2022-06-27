@@ -66,7 +66,6 @@ export async function getModFromSlug(slug: string, mc: Game): Promise<Mod> {
     return mods[0];
 }
 
-// TODO: Test recursive functionality
 export async function getAllDependencies(mod: Mod, gameVersion: string, modLoader: ModLoaderType, cf: Curseforge):
     Promise<{ mod: Mod, dependencies: Mod[] }[]> {
 

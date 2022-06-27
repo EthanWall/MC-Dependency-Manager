@@ -37,13 +37,20 @@ program
 
         // TODO: Add error reporting for mods not compatible with version or mod loader
 
-        console.log('Installing packages:');
-        userMods.forEach(userMod => console.log('\t' + userMod.slug));
+        // List of unique slugs to print to the CLI
+        const printableSlugs = new Set(slugs);
 
         for (const userMod of userMods) {
             const deps = await getAllDependencies(userMod, options.version, modLoaderType, cf);
-            deps.forEach(dep => console.log('\t' + dep.mod.slug));
+            deps.forEach(dep => {
+                if (!printableSlugs.has(dep.mod.slug))
+                    printableSlugs.add(dep.mod.slug);
+            });
         }
+
+        console.log('Installing packages:');
+        printableSlugs.forEach(slug => console.log('\t' + slug));
+
     });
 
 program.parseAsync(process.argv);
