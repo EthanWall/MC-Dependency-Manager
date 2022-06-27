@@ -1,7 +1,8 @@
 import {Command, Option} from "commander";
 import {Curseforge} from "node-curseforge";
 import {ModLoaderType} from "node-curseforge/dist/objects/enums";
-import {getAllDependencies, getModFromSlug} from "./util";
+import {getAllDependencies, getDirectDependencies, getLatestModFile, getModFromSlug} from "./util";
+import {addPackage} from "./files";
 
 const CF_KEY = process.env.CURSEFORGE_KEY;
 
@@ -34,22 +35,24 @@ program
 
         // Find a mod for each slug in the slugs array
         const userMods = await Promise.all(slugs.map(slug => getModFromSlug(slug, mc)));
+        const allMods = [...userMods];
 
         // TODO: Add error reporting for mods not compatible with version or mod loader
 
-        // List of unique slugs to print to the CLI
-        const printableSlugs = new Set(slugs);
-
         for (const userMod of userMods) {
-            const deps = await getAllDependencies(userMod, options.version, modLoaderType, cf);
-            deps.forEach(dep => {
-                if (!printableSlugs.has(dep.mod.slug))
-                    printableSlugs.add(dep.mod.slug);
-            });
-        }
+            // Add user mod to package file
+            const directDeps = await getDirectDependencies((await getLatestModFile(userMod, options.version, modLoaderType)), cf);
+            console.log(`Installing ${userMod.slug}.`);
+            await addPackage(userMod.slug, true, directDeps.map(dep => dep.slug));
 
-        console.log('Installing packages:');
-        printableSlugs.forEach(slug => console.log('\t' + slug));
+            const deps = await getAllDependencies(userMod, options.version, modLoaderType, cf);
+            await Promise.all(deps.map(dep => {
+                if (!allMods.includes(dep.mod)) {
+                    console.log(`Installing ${dep.mod.slug}.`);
+                    return addPackage(dep.mod.slug, false, dep.dependencies.map(sub => sub.slug));
+                }
+            }));
+        }
 
     });
 

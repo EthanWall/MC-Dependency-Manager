@@ -13,13 +13,17 @@ type PackageFile = {
     mods: PackageIndex
 }
 
-export const PKG_FILE_PATH = '../resources/project.json';
+export const PKG_FILE_PATH = './mcmm.json';
 
 function validatePackageFile(obj: object): obj is PackageFile {
     const pkgFile = (obj as PackageFile);
     return "version" in pkgFile &&
         "modLoader" in pkgFile &&
         "mods" in pkgFile;
+}
+
+export async function initPackageFile() {
+    
 }
 
 // TODO: Make sure functions close the file
