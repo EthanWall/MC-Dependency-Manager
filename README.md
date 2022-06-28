@@ -62,6 +62,8 @@ MMCM depends on the following `Node.js` packages:
 - `node-curseforge` for interfacing with the CurseForge API
 - `lodash` for utility functions
 
+> :warning: `node-curseforge` must be built from source, as the pre-built binary on NPM isn't up-to-date!
+
 ## Installation
 
 WIP
