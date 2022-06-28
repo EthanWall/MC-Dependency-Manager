@@ -10,8 +10,9 @@ Integrated with CurseForge, MCMM aims to make installing, updating, and removing
     - [x] Modloader
 - [x] Determine per-project file format
 - [ ] Determine conf file format
-- [ ] Add mods to a `package.json`-style file
+- [x] Add mods to a `package.json`-style file
     - [ ] Keep track of mod dependencies
+    - [ ] Only add mods that align with version and mod loader requirements
 - [ ] Download mods and their dependencies
     - [ ] Allow user to specify version
     - [ ] Allow user to pick dependencies
@@ -59,6 +60,7 @@ MMCM depends on the following `Node.js` packages:
 - `Commander.js` for the CLI interface
 - `Inquirer.js` for the interactive mod selection prompt
 - `node-curseforge` for interfacing with the CurseForge API
+- `lodash` for utility functions
 
 ## Installation
 

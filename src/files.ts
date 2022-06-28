@@ -1,5 +1,6 @@
 import fs from "fs";
-import {deleteFromString, formatJSON, getFromString, setFromString} from "./util";
+import {formatJSON} from "./util";
+import {set, get, unset} from "lodash";
 
 type Package = {
     userMod: boolean,
@@ -32,7 +33,7 @@ async function getValue(key: string): Promise<any> {
         const data = JSON.parse(buffer.toString());
 
         // Get the value from the object
-        return getFromString(key, data);
+        return get(data, key);
     } finally {
         file?.close();
     }
@@ -49,8 +50,8 @@ async function setValue(key: string, value: any) {
 
     let file;
     try {
-        // Open the file in write mode
-        file = await fs.promises.open(PKG_FILE_PATH, 'w+');
+        // Open the file in read mode
+        file = await fs.promises.open(PKG_FILE_PATH, 'r');
 
         // Read the file into a buffer
         const buffer = await fs.promises.readFile(file);
@@ -59,7 +60,11 @@ async function setValue(key: string, value: any) {
         let data = JSON.parse(buffer.toString());
 
         // Modify the object
-        data = setFromString(key, data, value);
+        set(data, key, value);
+
+        // Clear the file and open it in write mode
+        file.close();
+        file = await fs.promises.open(PKG_FILE_PATH, 'w');
 
         // Save the object to file
         await fs.promises.writeFile(file, formatJSON(data));
@@ -78,8 +83,8 @@ async function deleteValue(key: string) {
 
     let file;
     try {
-        // Open the file in write mode
-        file = await fs.promises.open(PKG_FILE_PATH, 'w+');
+        // Open the file in read mode
+        file = await fs.promises.open(PKG_FILE_PATH, 'r');
 
         // Read the file into a buffer
         const buffer = await fs.promises.readFile(file);
@@ -88,7 +93,11 @@ async function deleteValue(key: string) {
         let data = JSON.parse(buffer.toString());
 
         // Modify the object
-        data = deleteFromString(key, data);
+        unset(data, key);
+
+        // Clear the file and open it in write mode
+        file.close();
+        file = await fs.promises.open(PKG_FILE_PATH, 'w');
 
         // Save the object to file
         await fs.promises.writeFile(file, formatJSON(data));

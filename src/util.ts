@@ -13,6 +13,7 @@ export function formatJSON(obj: object): string {
  * @param path A decimal-seperated path pointing to the object
  * @param source The object
  */
+/*
 export function getFromString(path: string, source: object): any {
     // Return the original object if no path is given
     if (!path) {
@@ -28,6 +29,7 @@ export function getFromString(path: string, source: object): any {
 
     return result;
 }
+ */
 
 /**
  * Return a modified object with the value inserted into it
@@ -35,6 +37,8 @@ export function getFromString(path: string, source: object): any {
  * @param source The object. Won't be modified
  * @param value The value to insert into the returned object
  */
+
+/*
 export function setFromString(path: string, source: object, value: any): object {
     const arr = path.split('.');
     let obj: any = source;
@@ -58,6 +62,7 @@ export function deleteFromString(path: string, source: object) {
     delete obj[arr[i]];
     return obj;
 }
+ */
 
 export function sortModsSearch(index: Mod[], query: string): Mod[] {
     const formattedQuery = query.toLowerCase();
@@ -130,14 +135,3 @@ export async function getAllDependencies(mod: Mod, gameVersion: string, modLoade
 
     return allDeps;
 }
-
-const source = {
-    a: {
-        x: "abc",
-        y: "def"
-    },
-    b: "lol"
-};
-
-setFromString("a.x", source, "9");
-console.log(source);
