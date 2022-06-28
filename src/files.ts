@@ -1,6 +1,5 @@
 import fs from "fs";
-import {ModLoaderType} from "node-curseforge/dist/objects/enums";
-import {formatJSON} from "./util";
+import {formatJSON, getFromString, setFromString} from "./util";
 
 type Package = {
     userMod: boolean,
@@ -13,98 +12,82 @@ type PackageFile = {
     mods: PackageIndex
 }
 
+// TODO: Better way then static path?
 export const PKG_FILE_PATH = './mcmm.json';
 
-function validatePackageFile(obj: object): obj is PackageFile {
-    const pkgFile = (obj as PackageFile);
-    return "version" in pkgFile &&
-        "modLoader" in pkgFile &&
-        "mods" in pkgFile;
-}
-
-export async function initPackageFile() {
-    
-}
-
-// TODO: Make sure functions close the file
-export async function getPackages(file?: fs.promises.FileHandle): Promise<PackageIndex> {
-    file ??= await fs.promises.open(PKG_FILE_PATH, 'r');
-    const obj: PackageFile = await fs.promises.readFile(file).then(result => JSON.parse(result.toString()));
-    return obj.mods;
-}
-
-async function setPackages(packages: PackageIndex, file?: fs.promises.FileHandle) {
-    file ??= await fs.promises.open(PKG_FILE_PATH, 'w+');
-    const obj: PackageFile = await fs.promises.readFile(file).then(result => JSON.parse(result.toString()));
-    obj.mods = packages;
-    await fs.promises.writeFile(file, formatJSON(obj));
-}
-
-export async function addPackage(modSlug: string, isUserMod: boolean, dependencySlugs: string[], file?: fs.promises.FileHandle) {
-    file ??= await fs.promises.open(PKG_FILE_PATH, 'w+');
-    const packages = await getPackages(file);
-
-    packages[modSlug] = {userMod: isUserMod, dependencies: dependencySlugs};
-    await setPackages(packages, file);
-}
-
-export async function removePackage(modSlug: string, file?: fs.promises.FileHandle) {
-    file ??= await fs.promises.open(PKG_FILE_PATH, 'w+');
-    const packages = await getPackages(file);
-
-    delete packages[modSlug];
-    await setPackages(packages, file);
-}
-
-export async function getGameVersion(file?: fs.promises.FileHandle): Promise<string> {
-    file ??= await fs.promises.open(PKG_FILE_PATH, 'r');
-    const obj: PackageFile = await fs.promises.readFile(file).then(result => JSON.parse(result.toString()));
-    return obj.version;
-}
-
-export async function setGameVersion(gameVersion: string, file?: fs.promises.FileHandle) {
-    file ??= await fs.promises.open(PKG_FILE_PATH, 'w+');
-    const obj: PackageFile = await fs.promises.readFile(file).then(result => JSON.parse(result.toString()));
-
-    obj.version = gameVersion;
-    await fs.promises.writeFile(file, formatJSON(obj));
-}
-
-export async function getModLoader(file?: fs.promises.FileHandle) {
-    file ??= await fs.promises.open(PKG_FILE_PATH, 'r');
-    const obj: PackageFile = await fs.promises.readFile(file).then(result => JSON.parse(result.toString()));
-    return ModLoaderType[obj.modLoader.toUpperCase()];
-}
-
-export async function setModLoader(modLoader: "forge" | "fabric", file?: fs.promises.FileHandle) {
-    file ??= await fs.promises.open(PKG_FILE_PATH, 'w+');
-    const obj: PackageFile = await fs.promises.readFile(file).then(result => JSON.parse(result.toString()));
-
-    obj.modLoader = modLoader;
-    await fs.promises.writeFile(file, formatJSON(obj));
-}
-
-/*
-async function createConfig(minecraftVersion: string, modLoader: "forge" | "fabric") {
-    const obj = {
-        version: minecraftVersion,
-        modLoader: modLoader,
-        mods: {}
-    };
-
-    let config;
-    try {
-        // Open the file, but fail if it already exists
-        config = await fs.promises.open(PKG_FILE_PATH, 'wx');
-    } catch (err) {
-        if (err.code === 'EEXIST') {
-            console.error('config file already exists');
-            return;
-        } else {
-            throw err;
-        }
-    }
-
-    await fs.promises.writeFile(config, JSON.stringify(obj, null, 4));
-}
+/**
+ * Return an object from a JSON file
+ * @param key A decimal-seperated path to the object
  */
+async function getValue(key: string): Promise<object> {
+    let file;
+    try {
+        // Open the file in read mode
+        file = await fs.promises.open(PKG_FILE_PATH, 'r');
+
+        // Read the file into a buffer
+        const buffer = await fs.promises.readFile(file);
+
+        // Parse the file and store the data as an object
+        const data = JSON.parse(buffer.toString());
+
+        // Get the value from the object
+        return getFromString(key, data);
+    } finally {
+        file?.close();
+    }
+}
+
+/**
+ * Write a value to a JSON file
+ * @param key A decimal-seperated path to the object
+ * @param value An object that will be parsed into JSON
+ */
+async function setValue(key: string, value: object) {
+    let file;
+    try {
+        // Open the file in write mode
+        file = await fs.promises.open(PKG_FILE_PATH, 'w+');
+
+        // Read the file into a buffer
+        const buffer = await fs.promises.readFile(file);
+
+        // Parse the file and store the data as an object
+        let data = JSON.parse(buffer.toString());
+
+        // Modify the object
+        data = setFromString(key, data, value);
+
+        // Save the object to file
+        await fs.promises.writeFile(file, formatJSON(data));
+    } finally {
+        file?.close();
+    }
+}
+
+/**
+ * Creates a file in the correct format. Will not override an existing file
+ */
+async function initFile() {
+}
+
+export async function getPackages(): Promise<PackageIndex> {
+}
+
+export async function getGameVersion(): Promise<string> {
+}
+
+export async function getModLoader(): Promise<"forge" | "fabric"> {
+}
+
+export async function addPackage(modSlug: string, isUserMod: boolean, dependencySlugs: string[]) {
+}
+
+export async function removePackage(modSlug: string) {
+}
+
+export async function setGameVersion(gameVersion: string) {
+}
+
+export async function setModLoader(modLoader: "forge" | "fabric") {
+}

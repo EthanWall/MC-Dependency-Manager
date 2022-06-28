@@ -8,6 +8,45 @@ export function formatJSON(obj: object): string {
     return JSON.stringify(obj, null, '\t');
 }
 
+/**
+ * Get a value from an object using a string path
+ * @param path A decimal-seperated path pointing to the object
+ * @param source The object
+ */
+export function getFromString(path: string, source: object): any {
+    // Return the original object if no path is given
+    if (!path) {
+        return source;
+    }
+
+    const arr = path.split('.');
+
+    let result: any = source;
+    for (const key of arr) {
+        result = result[key];
+    }
+
+    return result;
+}
+
+/**
+ * Return a modified object with the value inserted into it
+ * @param path A decimal-seperated path pointing to the object
+ * @param source The object. Won't be modified
+ * @param value The value to insert into the returned object
+ */
+export function setFromString(path: string, source: object, value: any): object {
+    const arr = path.split('.');
+    let obj: any = source;
+
+    let i;
+    for (i = 0; i < arr.length - 1; i++) {
+        obj = obj[arr[i]];
+    }
+    obj[arr[i]] = value;
+    return obj;
+}
+
 export function sortModsSearch(index: Mod[], query: string): Mod[] {
     const formattedQuery = query.toLowerCase();
 
@@ -79,3 +118,14 @@ export async function getAllDependencies(mod: Mod, gameVersion: string, modLoade
 
     return allDeps;
 }
+
+const source = {
+    a: {
+        x: "abc",
+        y: "def"
+    },
+    b: "lol"
+};
+
+setFromString("a.x", source, "9");
+console.log(source);
