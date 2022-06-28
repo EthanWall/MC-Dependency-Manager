@@ -30,12 +30,15 @@ program
         const cf = new Curseforge(CF_KEY);
         const modLoaderType = ModLoaderType[options.modloader.toUpperCase()];
 
+        // Remove duplicate slugs
+        slugs = [...new Set(slugs)];
+
         // Get an instance of minecraft as a Game
         const mc = await cf.get_game('minecraft');
 
         // Find a mod for each slug in the slugs array
         const userMods = await Promise.all(slugs.map(slug => getModFromSlug(slug, mc)));
-        const allMods = [...userMods];
+        const allSlugs = userMods.map(userMod => userMod.slug);
 
         // TODO: Add error reporting for mods not compatible with version or mod loader
 
@@ -47,8 +50,9 @@ program
 
             const deps = await getAllDependencies(userMod, options.version, modLoaderType, cf);
             await Promise.all(deps.map(dep => {
-                if (!allMods.includes(dep.mod)) {
+                if (!allSlugs.includes(dep.mod.slug)) {
                     console.log(`Installing ${dep.mod.slug}.`);
+                    allSlugs.push(dep.mod.slug);
                     return addPackage(dep.mod.slug, false, dep.dependencies.map(sub => sub.slug));
                 }
             }));
