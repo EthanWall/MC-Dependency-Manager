@@ -47,6 +47,18 @@ export function setFromString(path: string, source: object, value: any): object 
     return obj;
 }
 
+export function deleteFromString(path: string, source: object) {
+    const arr = path.split('.');
+    let obj: any = source;
+
+    let i;
+    for (i = 0; i < arr.length - 1; i++) {
+        obj = obj[arr[i]];
+    }
+    delete obj[arr[i]];
+    return obj;
+}
+
 export function sortModsSearch(index: Mod[], query: string): Mod[] {
     const formattedQuery = query.toLowerCase();
 
