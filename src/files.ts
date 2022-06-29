@@ -106,7 +106,7 @@ async function deleteValue(key: string) {
     }
 }
 
-async function exists(path: fs.PathLike): Promise<boolean> {
+export async function exists(path: fs.PathLike): Promise<boolean> {
     try {
         await fs.promises.stat(path);
     } catch (err) {
