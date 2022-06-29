@@ -1,7 +1,7 @@
 import {Command, Option} from "commander";
 import {Curseforge} from "node-curseforge";
 import {ModLoaderType} from "node-curseforge/dist/objects/enums";
-import {getAllDependencies, getDirectDependencies, getLatestModFile, getModFromSlug} from "./util";
+import {getDeepDependencies, getDirectDependencies, getLatestModFile, getModFromSlug} from "./util";
 import {addPackage} from "./files";
 
 const CF_KEY = process.env.CURSEFORGE_KEY;
@@ -43,12 +43,15 @@ program
         // TODO: Add error reporting for mods not compatible with version or mod loader
 
         for (const userMod of userMods) {
+            // Get the latest file for the mod
+            const userModFile = await getLatestModFile(userMod, options.version, modLoaderType);
+
             // Add user mod to package file
-            const directDeps = await getDirectDependencies((await getLatestModFile(userMod, options.version, modLoaderType)), cf);
+            const directDeps = await getDirectDependencies(userModFile, cf);
             console.log(`Installing ${userMod.slug}.`);
             await addPackage(userMod.slug, true, directDeps.map(dep => dep.slug));
 
-            const deps = await getAllDependencies(userMod, options.version, modLoaderType, cf);
+            const deps = await getDeepDependencies(userModFile, options.version, modLoaderType, cf);
             await Promise.all(deps.map(dep => {
                 if (!allSlugs.includes(dep.mod.slug)) {
                     console.log(`Installing ${dep.mod.slug}.`);

@@ -122,15 +122,23 @@ export async function getModFromSlug(slug: string, mc: Game): Promise<Mod> {
     return mods[0];
 }
 
-export async function getAllDependencies(mod: Mod, gameVersion: string, modLoader: ModLoaderType, cf: Curseforge):
-    Promise<{ mod: Mod, dependencies: Mod[] }[]> {
+/**
+ * Return every package that modFile depends on (including those dependencies deps, etc.)
+ * @param modFile The mod file associated with the mod to check dependencies for
+ * @param gameVersion The Minecraft version string
+ * @param modLoader The Minecraft mod loader
+ * @param cf A Curseforge instance
+ */
+export async function getDeepDependencies(modFile: ModFile, gameVersion: string, modLoader: ModLoaderType, cf: Curseforge):
+    Promise<{ mod: Mod; modFile: ModFile; dependencies: Mod[] }[]> {
 
-    const primaryDeps = await getLatestModFile(mod, gameVersion, modLoader).then(file => getDirectDependencies(file, cf));
+    const primaryDeps = await getDirectDependencies(modFile, cf);
 
-    const allDeps: { mod: Mod, dependencies: Mod[] }[] = [];
+    const allDeps: { mod: Mod, modFile: ModFile, dependencies: Mod[] }[] = [];
     for (const dep of primaryDeps) {
-        const subDeps = await getAllDependencies(dep, gameVersion, modLoader, cf);
-        allDeps.push({mod: dep, dependencies: subDeps.map(obj => obj.mod)}, ...subDeps);
+        const depFile = await getLatestModFile(dep, gameVersion, modLoader);
+        const subDeps = await getDeepDependencies(depFile, gameVersion, modLoader, cf);
+        allDeps.push({mod: dep, modFile: depFile, dependencies: subDeps.map(obj => obj.mod)}, ...subDeps);
     }
 
     return allDeps;
