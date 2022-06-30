@@ -1,9 +1,8 @@
 import {Command, Option} from "commander";
-import {Curseforge} from "node-curseforge";
+import {Curseforge, Mod, ModFile} from "node-curseforge";
 import {ModLoaderType} from "node-curseforge/dist/objects/enums";
 import {getDeepDependencies, getDirectDependencies, getLatestModFile, getModFromSlug} from "./util";
-import {addPackage, exists} from "./files";
-import {Mod, ModFile} from "../../../git/node-curseforge";
+import {addPackage, exists, getGameVersion, getModLoader} from "./files";
 import * as path from "path";
 import fs from "fs";
 
@@ -14,12 +13,13 @@ const program = new Command();
 
 program
     .argument('<slugs...>', 'shorthand name for the mod')
-    .requiredOption('-v, --version <version>', 'Minecraft version string')
+    .option('-v, --version <version>', 'Minecraft version string')
     .addOption(new Option('-l, --modloader <name>', 'Minecraft mod loader')
-        .choices(['forge', 'fabric'])
-        .makeOptionMandatory())
-    .action(async (slugs: Array<string>, options: { version: string, modloader: "forge" | "fabric" }) => {
+        .choices(['forge', 'fabric']))
+    .action(async (slugs: Array<string>, options: { version?: string, modloader?: "forge" | "fabric" }) => {
         // TODO: Install from package file
+
+        let version, modLoader;
 
         if (!slugs) {
             console.error('error: missing required argument \'slugs\'');
@@ -31,8 +31,19 @@ program
             return;
         }
 
+        // Use arguments if given
+        if (options) {
+            if (options.version) version = options.version;
+            if (options.modloader) modLoader = options.modloader;
+        }
+
+        // If args weren't given, load values from the file
+        version ??= await getGameVersion();
+        modLoader ??= await getModLoader();
+
         const cf = new Curseforge(CF_KEY);
-        const modLoaderType = ModLoaderType[options.modloader.toUpperCase()];
+        // @ts-ignore
+        const modLoaderType = ModLoaderType[modLoader.toUpperCase()];
 
         // Remove duplicate slugs
         slugs = [...new Set(slugs)];
@@ -48,7 +59,7 @@ program
 
         for (const userMod of userMods) {
             // Get the latest file for the mod
-            const userModFile = await getLatestModFile(userMod, options.version, modLoaderType);
+            const userModFile = await getLatestModFile(userMod, version, modLoaderType);
 
             // Add user mod to package file
             const directDeps = await getDirectDependencies(userModFile, cf);
@@ -56,7 +67,7 @@ program
             await addPackage(userMod.slug, true, directDeps.map(dep => dep.slug));
             await downloadMod(userMod, userModFile);
 
-            const deps = await getDeepDependencies(userModFile, options.version, modLoaderType, cf);
+            const deps = await getDeepDependencies(userModFile, version, modLoaderType, cf);
             await Promise.all(deps.map(dep => {
                 if (!allSlugs.includes(dep.mod.slug)) {
                     console.log(`Installing ${dep.mod.slug}.`);
@@ -75,7 +86,7 @@ program
  * @param modFile The mod file to download
  */
 async function downloadMod(mod: Mod, modFile: ModFile) {
-    const fileName = `${mod.slug}-${modFile.fileFingerprint}.jar`;
+    const fileName = `${mod.slug}~${modFile.fileFingerprint}.jar`;
     const filePath = path.posix.join(DOWNLOAD_PATH, fileName);
 
     // Create the download directory if it doesn't exist
@@ -86,8 +97,14 @@ async function downloadMod(mod: Mod, modFile: ModFile) {
         return;
     }
 
+    // Remove old versions of mods
+    const oldFiles = (await fs.promises.readdir(DOWNLOAD_PATH)).filter(fn => fn.startsWith(`${mod.slug}~`));
+    for (const oldFile of oldFiles) {
+        await fs.promises.unlink(path.posix.join(DOWNLOAD_PATH, oldFile));
+    }
+
     // Download the mod and store whether the download was a success
-    const wasSuccessful = await modFile.download(filePath, false);
+    const wasSuccessful = await modFile.download(filePath, true);
 
     if (!wasSuccessful)
         console.error(`${mod.slug} failed to download`);

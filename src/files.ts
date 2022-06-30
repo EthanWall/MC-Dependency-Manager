@@ -7,11 +7,6 @@ type Package = {
     dependencies?: string[]
 }
 type PackageIndex = { [slug: string]: Package }
-type PackageFile = {
-    version: string,
-    modLoader: "forge" | "fabric",
-    mods: PackageIndex
-}
 
 // TODO: Better way then static path?
 export const PKG_FILE_PATH = './mcmm.json';
@@ -109,11 +104,12 @@ async function deleteValue(key: string) {
 export async function exists(path: fs.PathLike): Promise<boolean> {
     try {
         await fs.promises.stat(path);
-    } catch (err) {
+    } catch (err: any) {
         if (err.code === 'ENOENT') {
             return false;
+        } else {
+            throw err;
         }
-        throw err;
     }
     return true;
 }
