@@ -10,32 +10,34 @@ const DOWNLOAD_PATH = './mods/';
 const program = new Command();
 
 program
-    .action(async () => {
-        if (!CF_KEY) {
-            console.error('missing env variable for CURSEFORGE_KEY');
-            return;
-        }
+    .action(update);
 
-        const cf = new Curseforge(CF_KEY);
-        const mc = await cf.get_game('minecraft');
+export async function update() {
+    if (!CF_KEY) {
+        console.error('missing env variable for CURSEFORGE_KEY');
+        return;
+    }
 
-        // Get options
-        const version = await getGameVersion();
-        // @ts-ignore
-        const modLoaderType = ModLoaderType[(await getModLoader()).toUpperCase()];
+    const cf = new Curseforge(CF_KEY);
+    const mc = await cf.get_game('minecraft');
 
-        // Find mods to install from the package file
-        const slugs = Object.keys(await getPackages());
-        const mods = await Promise.all(slugs.map(slug => getModFromSlug(slug, mc)));
+    // Get options
+    const version = await getGameVersion();
+    // @ts-ignore
+    const modLoaderType = ModLoaderType[(await getModLoader()).toUpperCase()];
 
-        // Find mod files
-        const modFiles = await Promise.all(mods.map(mod => getLatestModFile(mod, version, modLoaderType)));
+    // Find mods to install from the package file
+    const slugs = Object.keys(await getPackages());
+    const mods = await Promise.all(slugs.map(slug => getModFromSlug(slug, mc)));
 
-        // Download the mod files
-        for (let i = 0; i < mods.length; i++) {
-            const updated = await downloadMod(mods[i], modFiles[i], DOWNLOAD_PATH);
-            if (updated) console.log(`Updated ${mods[i].slug}.`);
-        }
-    });
+    // Find mod files
+    const modFiles = await Promise.all(mods.map(mod => getLatestModFile(mod, version, modLoaderType)));
+
+    // Download the mod files
+    for (let i = 0; i < mods.length; i++) {
+        const updated = await downloadMod(mods[i], modFiles[i], DOWNLOAD_PATH);
+        if (updated) console.log(`Updated ${mods[i].slug}.`);
+    }
+}
 
 program.parseAsync(process.argv);
