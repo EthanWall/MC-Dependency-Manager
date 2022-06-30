@@ -4,10 +4,19 @@ import {ModFileNotFoundError, ModNotFoundError} from "./errors";
 
 const MODS_CLASS_ID = 6;
 
+/**
+ * Stringify and format an object into JSON
+ * @param obj The object to stringify
+ */
 export function formatJSON(obj: object): string {
     return JSON.stringify(obj, null, '\t');
 }
 
+/**
+ * Sort a list of mods by relevance (whether the full query is included in the mod name)
+ * @param index A list of mods to sort
+ * @param query A string search query
+ */
 export function sortModsSearch(index: Mod[], query: string): Mod[] {
     const formattedQuery = query.toLowerCase();
 
@@ -26,14 +35,34 @@ export function sortModsSearch(index: Mod[], query: string): Mod[] {
     }).sort((a, b) => b.points - a.points);
 }
 
-export async function getDirectDependencies(modFile: ModFile, cf: Curseforge): Promise<Mod[]> {
-    // Get the mod ID's of the dependencies
-    const ids = modFile.dependencies.map(dep => dep.modId);
+/**
+ * Get a Mod from Curseforge using a slug
+ * @param slug A Curseforge slug. Human-readable mod ID
+ * @param mc A Minecraft instance
+ * @throws {ModNotFoundError} Throws if the mod isn't found on Curseforge
+ */
+export async function getModFromSlug(slug: string, mc: Game): Promise<Mod> {
+    let options = {
+        classId: MODS_CLASS_ID,
+        slug
+    };
 
-    // Get a Mod for each mod ID
-    return await Promise.all(ids.map(id => cf.get_mod(id)));
+    const mods = await mc.search_mods(options);
+
+    if (!mods[0]) {
+        throw new ModNotFoundError(slug);
+    }
+
+    return mods[0];
 }
 
+/**
+ * Find the latest mod file for the specified game version and mod loader
+ * @param mod The mod to get the file for
+ * @param gameVersion The Minecraft game version string
+ * @param modLoader The Minecraft mod loader
+ * @throws {ModFileNotFoundError} Throws if a matching file isn't found for the game version and mod loader
+ */
 export async function getLatestModFile(mod: Mod, gameVersion: string, modLoader: ModLoaderType): Promise<ModFile> {
     const options = {
         gameVersion,
@@ -51,19 +80,17 @@ export async function getLatestModFile(mod: Mod, gameVersion: string, modLoader:
     return files[0];
 }
 
-export async function getModFromSlug(slug: string, mc: Game): Promise<Mod> {
-    let options = {
-        classId: MODS_CLASS_ID,
-        slug
-    };
+/**
+ * Get an array of dependencies that the mod declares directly (won't find dependencies of dependencies)
+ * @param modFile The mod file to find dependencies for
+ * @param cf A Curseforge instance
+ */
+export async function getDirectDependencies(modFile: ModFile, cf: Curseforge): Promise<Mod[]> {
+    // Get the mod ID's of the dependencies
+    const ids = modFile.dependencies.map(dep => dep.modId);
 
-    const mods = await mc.search_mods(options);
-
-    if (!mods[0]) {
-        throw new ModNotFoundError(slug);
-    }
-
-    return mods[0];
+    // Get a Mod for each mod ID
+    return await Promise.all(ids.map(id => cf.get_mod(id)));
 }
 
 /**
