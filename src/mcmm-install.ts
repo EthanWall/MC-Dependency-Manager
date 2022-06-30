@@ -75,6 +75,18 @@ export async function install(slugs: Array<string>, options?: { version?: string
         const deps = await getDeepDependencies(userModFile, version, modLoaderType, cf);
 
         // Download each dependency as a mod
+        // TODO: Make file DOWNLOADS asynchronous. DO NOT make writes to the mcmm.json file async
+        for (const dep of deps) {
+            if (allSlugs.includes(dep.mod.slug))
+                continue;
+
+            console.log(`Installing ${dep.mod.slug}.`);
+            allSlugs.push(dep.mod.slug);
+            await addPackage(dep.mod.slug, false, dep.dependencies.map(sub => sub.slug));
+            await downloadMod(dep.mod, dep.modFile, DOWNLOAD_PATH);
+        }
+
+        /*
         await Promise.all(deps.map(dep => {
             if (!allSlugs.includes(dep.mod.slug)) {
                 console.log(`Installing ${dep.mod.slug}.`);
@@ -83,5 +95,6 @@ export async function install(slugs: Array<string>, options?: { version?: string
                     .then(() => downloadMod(dep.mod, dep.modFile, DOWNLOAD_PATH));
             }
         }));
+        */
     }
 }
