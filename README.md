@@ -9,12 +9,12 @@ Integrated with CurseForge, MCMM aims to make installing, updating, and removing
     - [x] Game version
     - [x] Modloader
 - [x] Determine per-project file format
-- [ ] Determine conf file format
+- [ ] Determine global conf file format
 - [x] Add mods to a `package.json`-style file
-    - [ ] Keep track of mod dependencies
-    - [ ] Only add mods that align with version and mod loader requirements
-- [ ] Download mods and their dependencies
-    - [ ] Allow user to specify version
+    - [x] Keep track of mod dependencies
+    - [x] Only add mods that align with version and mod loader requirements
+- [x] Download mods and their dependencies
+    - [ ] Allow user to specify mod version
     - [ ] Allow user to pick dependencies
 - [ ] Update mods to the latest relevant version
 - [ ] Remove mods, and if necessary, their dependencies

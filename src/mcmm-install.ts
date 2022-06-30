@@ -5,6 +5,7 @@ import {getDeepDependencies, getDirectDependencies, getLatestModFile, getModFrom
 import {addPackage, exists, getGameVersion, getModLoader} from "./files";
 import * as path from "path";
 import fs from "fs";
+import {ModFileNotFoundError, ModNotFoundError} from "./errors";
 
 const CF_KEY = process.env.CURSEFORGE_KEY;
 const DOWNLOAD_PATH = './mods/';
@@ -52,14 +53,28 @@ program
         const mc = await cf.get_game('minecraft');
 
         // Find a mod for each slug in the slugs array
-        const userMods = await Promise.all(slugs.map(slug => getModFromSlug(slug, mc)));
+        const userMods = (await Promise.all(slugs.map(slug => getModFromSlug(slug, mc).catch(err => {
+            if (err instanceof ModNotFoundError)
+                console.error(`The mod "${err.modSlug}" does not exist. Did you spell it right?`);
+            else
+                throw err;
+        })))).filter(obj => obj instanceof Mod) as Mod[];
         const allSlugs = userMods.map(userMod => userMod.slug);
 
         // TODO: Add error reporting for mods not compatible with version or mod loader
 
         for (const userMod of userMods) {
             // Get the latest file for the mod
-            const userModFile = await getLatestModFile(userMod, version, modLoaderType);
+            const userModFile = await getLatestModFile(userMod, version, modLoaderType).catch(err => {
+                if (err instanceof ModFileNotFoundError)
+                    console.error(`The mod "${userMod.slug}" exists but isn't compatible with this version or mod loader`);
+                else
+                    throw err;
+            });
+
+            // If the mod file doesn't exist, kill the program
+            if (!(userModFile instanceof ModFile))
+                return;
 
             // Add user mod to package file
             const directDeps = await getDirectDependencies(userModFile, cf);
@@ -67,7 +82,11 @@ program
             await addPackage(userMod.slug, true, directDeps.map(dep => dep.slug));
             await downloadMod(userMod, userModFile);
 
+            // This probably shouldn't throw any errors if the mod authors published their mods right?
+            // Find all the dependencies that the user mod relies on
             const deps = await getDeepDependencies(userModFile, version, modLoaderType, cf);
+
+            // Download each dependency as a mod
             await Promise.all(deps.map(dep => {
                 if (!allSlugs.includes(dep.mod.slug)) {
                     console.log(`Installing ${dep.mod.slug}.`);
@@ -93,7 +112,7 @@ async function downloadMod(mod: Mod, modFile: ModFile) {
     await fs.promises.mkdir(DOWNLOAD_PATH, {recursive: true});
 
     if (await exists(filePath)) {
-        console.log(`the latest version of ${mod.slug} already exists`);
+        console.log(`The latest version of ${mod.slug} already exists`);
         return;
     }
 
