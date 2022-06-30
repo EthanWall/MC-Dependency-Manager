@@ -1,6 +1,8 @@
 import {Curseforge, Game, Mod, ModFile} from "node-curseforge";
 import {ModLoaderType} from "node-curseforge/dist/objects/enums";
 import {ModFileNotFoundError, ModNotFoundError} from "./errors";
+import path from "path";
+import fs from "fs";
 
 const MODS_CLASS_ID = 6;
 
@@ -10,6 +12,23 @@ const MODS_CLASS_ID = 6;
  */
 export function formatJSON(obj: object): string {
     return JSON.stringify(obj, null, '\t');
+}
+
+/**
+ * Check if a file or directory exists
+ * @param path Path to the file
+ */
+export async function exists(path: fs.PathLike): Promise<boolean> {
+    try {
+        await fs.promises.stat(path);
+    } catch (err: any) {
+        if (err.code === 'ENOENT') {
+            return false;
+        } else {
+            throw err;
+        }
+    }
+    return true;
 }
 
 /**
@@ -113,4 +132,35 @@ export async function getDeepDependencies(modFile: ModFile, gameVersion: string,
     }
 
     return allDeps;
+}
+
+/**
+ * Downloads a mod given that it has not already been downloaded
+ * @param mod The mod associated with the file. Used for naming
+ * @param modFile The mod file to download
+ * @param downloadDir Path to the mods directory (i.e. "./mods")
+ */
+export async function downloadMod(mod: Mod, modFile: ModFile, downloadDir: fs.PathLike) {
+    const fileName = `${mod.slug}~${modFile.fileFingerprint}.jar`;
+    const filePath = path.posix.join(downloadDir.toString(), fileName);
+
+    // Create the download directory if it doesn't exist
+    await fs.promises.mkdir(downloadDir, {recursive: true});
+
+    if (await exists(filePath)) {
+        console.log(`The latest version of ${mod.slug} already exists`);
+        return;
+    }
+
+    // Remove old versions of mods
+    const oldFiles = (await fs.promises.readdir(downloadDir)).filter(fn => fn.startsWith(`${mod.slug}~`));
+    for (const oldFile of oldFiles) {
+        await fs.promises.unlink(path.posix.join(downloadDir.toString(), oldFile));
+    }
+
+    // Download the mod and store whether the download was a success
+    const wasSuccessful = await modFile.download(filePath, true);
+
+    if (!wasSuccessful)
+        console.error(`${mod.slug} failed to download`);
 }

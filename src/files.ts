@@ -1,5 +1,5 @@
 import fs from "fs";
-import {formatJSON} from "./util";
+import {exists, formatJSON} from "./util";
 import {set, get, unset} from "lodash";
 
 type Package = {
@@ -99,19 +99,6 @@ async function deleteValue(key: string) {
     } finally {
         file?.close();
     }
-}
-
-export async function exists(path: fs.PathLike): Promise<boolean> {
-    try {
-        await fs.promises.stat(path);
-    } catch (err: any) {
-        if (err.code === 'ENOENT') {
-            return false;
-        } else {
-            throw err;
-        }
-    }
-    return true;
 }
 
 /**

@@ -1,10 +1,8 @@
 import {Command, Option} from "commander";
 import {Curseforge, Mod, ModFile} from "node-curseforge";
 import {ModLoaderType} from "node-curseforge/dist/objects/enums";
-import {getDeepDependencies, getDirectDependencies, getLatestModFile, getModFromSlug} from "./util";
-import {addPackage, exists, getGameVersion, getModLoader} from "./files";
-import * as path from "path";
-import fs from "fs";
+import {downloadMod, getDeepDependencies, getDirectDependencies, getLatestModFile, getModFromSlug} from "./util";
+import {addPackage, getGameVersion, getModLoader} from "./files";
 import {ModFileNotFoundError, ModNotFoundError} from "./errors";
 
 const CF_KEY = process.env.CURSEFORGE_KEY;
@@ -80,7 +78,7 @@ program
             const directDeps = await getDirectDependencies(userModFile, cf);
             console.log(`Installing ${userMod.slug}.`);
             await addPackage(userMod.slug, true, directDeps.map(dep => dep.slug));
-            await downloadMod(userMod, userModFile);
+            await downloadMod(userMod, userModFile, DOWNLOAD_PATH);
 
             // This probably shouldn't throw any errors if the mod authors published their mods right?
             // Find all the dependencies that the user mod relies on
@@ -92,41 +90,11 @@ program
                     console.log(`Installing ${dep.mod.slug}.`);
                     allSlugs.push(dep.mod.slug);
                     return addPackage(dep.mod.slug, false, dep.dependencies.map(sub => sub.slug))
-                        .then(() => downloadMod(dep.mod, dep.modFile));
+                        .then(() => downloadMod(dep.mod, dep.modFile, DOWNLOAD_PATH));
                 }
             }));
         }
 
     });
-
-/**
- * Downloads a mod given that it has not already been downloaded
- * @param mod The mod associated with the file. Used for naming
- * @param modFile The mod file to download
- */
-async function downloadMod(mod: Mod, modFile: ModFile) {
-    const fileName = `${mod.slug}~${modFile.fileFingerprint}.jar`;
-    const filePath = path.posix.join(DOWNLOAD_PATH, fileName);
-
-    // Create the download directory if it doesn't exist
-    await fs.promises.mkdir(DOWNLOAD_PATH, {recursive: true});
-
-    if (await exists(filePath)) {
-        console.log(`The latest version of ${mod.slug} already exists`);
-        return;
-    }
-
-    // Remove old versions of mods
-    const oldFiles = (await fs.promises.readdir(DOWNLOAD_PATH)).filter(fn => fn.startsWith(`${mod.slug}~`));
-    for (const oldFile of oldFiles) {
-        await fs.promises.unlink(path.posix.join(DOWNLOAD_PATH, oldFile));
-    }
-
-    // Download the mod and store whether the download was a success
-    const wasSuccessful = await modFile.download(filePath, true);
-
-    if (!wasSuccessful)
-        console.error(`${mod.slug} failed to download`);
-}
 
 program.parseAsync(process.argv);
