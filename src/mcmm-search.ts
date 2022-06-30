@@ -1,19 +1,12 @@
-import {Command} from "commander";
 import inquirer from "inquirer";
 import Curseforge, {Mod} from "node-curseforge";
 import {sortModsSearch} from "./util";
 import {PagingOptions, SearchOptions} from "node-curseforge/dist/objects/types";
+import {install} from "./mcmm-install";
 
 const CF_KEY = process.env.CURSEFORGE_KEY;
 
-const program = new Command();
-
-program
-    .argument('<query...>', 'search text')
-    .option('-i, --interactive', 'enable interactive user prompts?', false)
-    .action(search);
-
-export function search(query: Array<string>, options: { interactive: boolean }) {
+export async function search(query: Array<string>, options: { interactive: boolean } = {interactive: false}) {
     if (!CF_KEY) {
         console.error('missing env variable for CURSEFORGE_KEY');
         return;
@@ -34,32 +27,26 @@ export function search(query: Array<string>, options: { interactive: boolean }) 
     };
 
     // Mods sorted by relevance
-    const sortModsPromise = cf.get_game('minecraft')
+    const sortedMods = await cf.get_game('minecraft')
         .then(mc => mc.search_mods(searchParams))
         .then(mods => sortModsSearch(mods, queryString));
 
     if (!options.interactive) {
-        sortModsPromise.then((mods) => mods.forEach((mod: Mod) => console.log(`${mod.slug} \\ ${mod.name} \\ ${mod.summary}`)));
+        sortedMods.forEach((mod: Mod) => console.log(`${mod.slug} \\ ${mod.name} \\ ${mod.summary}`));
         return;
     }
 
     // Prompt the user to pick a mod they wish to install
-    const chooseModPromise = sortModsPromise.then(mods => promptModChoice(mods));
+    const modChoice = await promptModChoice(sortedMods);
 
     // Prompt the user to install the mod
-    const confirmChoicePromise = chooseModPromise.then(choice => promptConfirmInstall(choice));
+    const confirmChoice = await promptConfirmInstall(modChoice);
 
-    // TODO: Actually install mod
-    Promise.all([chooseModPromise, confirmChoicePromise])
-        .then(([choice, confirmation]) => {
-            if (confirmation) {
-                console.log(`Will install ${choice.slug}`);
-
-                // TODO: Install the mod
-            } else {
-                console.log('operation cancelled');
-            }
-        });
+    if (confirmChoice) {
+        await install([modChoice.slug]);
+    } else {
+        console.error('operation cancelled');
+    }
 }
 
 function promptModChoice(mods: Mod[]): Promise<Mod> {
@@ -95,5 +82,3 @@ function promptConfirmInstall(mod: Mod): Promise<boolean> {
 
     return inquirer.prompt(questions).then(answers => answers[0]);
 }
-
-program.parse(process.argv);

@@ -1,4 +1,3 @@
-import {Command, Option} from "commander";
 import {Curseforge, Mod, ModFile} from "node-curseforge";
 import {ModLoaderType} from "node-curseforge/dist/objects/enums";
 import {downloadMod, getDeepDependencies, getDirectDependencies, getLatestModFile, getModFromSlug} from "./util";
@@ -8,16 +7,7 @@ import {ModFileNotFoundError, ModNotFoundError} from "./errors";
 const CF_KEY = process.env.CURSEFORGE_KEY;
 const DOWNLOAD_PATH = './mods/';
 
-const program = new Command();
-
-program
-    .argument('<slugs...>', 'shorthand name for the mod')
-    .option('-v, --version <version>', 'Minecraft version string')
-    .addOption(new Option('-l, --modloader <name>', 'Minecraft mod loader')
-        .choices(['forge', 'fabric']))
-    .action(install);
-
-export async function install(slugs: Array<string>, options: { version?: string, modloader?: "forge" | "fabric" }) {
+export async function install(slugs: Array<string>, options?: { version?: string, modloader?: "forge" | "fabric" }) {
     // TODO: Install from package file
 
     let version, modLoader;
@@ -95,5 +85,3 @@ export async function install(slugs: Array<string>, options: { version?: string,
         }));
     }
 }
-
-program.parseAsync(process.argv);

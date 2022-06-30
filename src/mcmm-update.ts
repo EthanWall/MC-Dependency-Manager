@@ -1,4 +1,3 @@
-import {Command} from "commander";
 import {getGameVersion, getModLoader, getPackages} from "./files";
 import {downloadMod, getLatestModFile, getModFromSlug} from "./util";
 import Curseforge from "node-curseforge";
@@ -6,11 +5,6 @@ import {ModLoaderType} from "node-curseforge/dist/objects/enums";
 
 const CF_KEY = process.env.CURSEFORGE_KEY;
 const DOWNLOAD_PATH = './mods/';
-
-const program = new Command();
-
-program
-    .action(update);
 
 export async function update() {
     if (!CF_KEY) {
@@ -39,5 +33,3 @@ export async function update() {
         if (updated) console.log(`Updated ${mods[i].slug}.`);
     }
 }
-
-program.parseAsync(process.argv);
