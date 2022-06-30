@@ -7,6 +7,7 @@ program
     .description('The package manager for modded Minecraft')
     .version('0.0.1')
     .command('search <query...>', 'search CurseForge for mods').alias('s')
-    .command('install <slug>', 'install a mod').alias('i');
+    .command('install <slug>', 'install a mod').alias('i')
+    .command('update', 'update any installed mods').alias('u');
 
 program.parse(process.argv);

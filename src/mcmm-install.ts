@@ -59,8 +59,6 @@ program
         })))).filter(obj => obj instanceof Mod) as Mod[];
         const allSlugs = userMods.map(userMod => userMod.slug);
 
-        // TODO: Add error reporting for mods not compatible with version or mod loader
-
         for (const userMod of userMods) {
             // Get the latest file for the mod
             const userModFile = await getLatestModFile(userMod, version, modLoaderType).catch(err => {

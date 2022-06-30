@@ -139,8 +139,9 @@ export async function getDeepDependencies(modFile: ModFile, gameVersion: string,
  * @param mod The mod associated with the file. Used for naming
  * @param modFile The mod file to download
  * @param downloadDir Path to the mods directory (i.e. "./mods")
+ * @return Was a new file downloaded?
  */
-export async function downloadMod(mod: Mod, modFile: ModFile, downloadDir: fs.PathLike) {
+export async function downloadMod(mod: Mod, modFile: ModFile, downloadDir: fs.PathLike): Promise<boolean> {
     const fileName = `${mod.slug}~${modFile.fileFingerprint}.jar`;
     const filePath = path.posix.join(downloadDir.toString(), fileName);
 
@@ -149,7 +150,7 @@ export async function downloadMod(mod: Mod, modFile: ModFile, downloadDir: fs.Pa
 
     if (await exists(filePath)) {
         console.log(`The latest version of ${mod.slug} already exists`);
-        return;
+        return false;
     }
 
     // Remove old versions of mods
@@ -161,6 +162,10 @@ export async function downloadMod(mod: Mod, modFile: ModFile, downloadDir: fs.Pa
     // Download the mod and store whether the download was a success
     const wasSuccessful = await modFile.download(filePath, true);
 
-    if (!wasSuccessful)
+    if (!wasSuccessful) {
         console.error(`${mod.slug} failed to download`);
+        return false;
+    }
+
+    return true;
 }

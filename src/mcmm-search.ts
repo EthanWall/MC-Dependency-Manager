@@ -81,6 +81,7 @@ program
         // Prompt the user to install the mod
         const confirmChoicePromise = chooseModPromise.then(choice => promptConfirmInstall(choice));
 
+        // TODO: Actually install mod
         Promise.all([chooseModPromise, confirmChoicePromise])
             .then(([choice, confirmation]) => {
                 if (confirmation) {
