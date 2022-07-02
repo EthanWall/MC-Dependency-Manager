@@ -11,7 +11,7 @@ const MODS_CLASS_ID = 6;
  * @param obj The object to stringify
  */
 export function formatJSON(obj: object): string {
-    return JSON.stringify(obj, null, '\t');
+    return JSON.stringify(obj, null, 2);
 }
 
 /**
