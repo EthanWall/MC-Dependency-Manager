@@ -104,12 +104,12 @@ export async function getLatestModFile(mod: Mod, gameVersion: string, modLoader:
  * @param modFile The mod file to find dependencies for
  * @param cf A Curseforge instance
  */
-export async function getDirectDependencies(modFile: ModFile, cf: Curseforge): Promise<Mod[]> {
+export function getDirectDependencies(modFile: ModFile, cf: Curseforge): Promise<Mod[]> {
     // Get the mod ID's of the dependencies
     const ids = modFile.dependencies.map(dep => dep.modId);
 
     // Get a Mod for each mod ID
-    return await Promise.all(ids.map(id => cf.get_mod(id)));
+    return Promise.all(ids.map(id => cf.get_mod(id)));
 }
 
 /**

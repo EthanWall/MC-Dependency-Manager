@@ -7,7 +7,7 @@ import {ModFileNotFoundError, ModNotFoundError} from "./errors";
 const CF_KEY = process.env.CURSEFORGE_KEY;
 const DOWNLOAD_PATH = './mods/';
 
-export async function install(slugs: Array<string>, options?: { version?: string, modloader?: "forge" | "fabric" }) {
+export async function cmdInstall(slugs: Array<string>, options?: { version?: string, modloader?: "forge" | "fabric" }) {
     // TODO: Install from package file
 
     let version, modLoader;
@@ -49,9 +49,12 @@ export async function install(slugs: Array<string>, options?: { version?: string
         else
             throw err;
     })))).filter(obj => obj instanceof Mod) as Mod[];
-    const allSlugs = userMods.map(userMod => userMod.slug);
+
+    const modsToDownload: { mod: Mod, modFile: ModFile, dependencies: Mod[], isUserMod: boolean }[] = [];
 
     for (const userMod of userMods) {
+        console.log(`Getting ${userMod.slug}...`);
+
         // Get the latest file for the mod
         const userModFile = await getLatestModFile(userMod, version, modLoaderType).catch(err => {
             if (err instanceof ModFileNotFoundError)
@@ -66,9 +69,7 @@ export async function install(slugs: Array<string>, options?: { version?: string
 
         // Add user mod to package file
         const directDeps = await getDirectDependencies(userModFile, cf);
-        console.log(`Installing ${userMod.slug}.`);
-        await addPackage(userMod.slug, true, directDeps.map(dep => dep.slug));
-        await downloadMod(userMod, userModFile, DOWNLOAD_PATH);
+        modsToDownload.push({mod: userMod, modFile: userModFile, dependencies: directDeps, isUserMod: true});
 
         // This probably shouldn't throw any errors if the mod authors published their mods right?
         // Find all the dependencies that the user mod relies on
@@ -76,25 +77,25 @@ export async function install(slugs: Array<string>, options?: { version?: string
 
         // Download each dependency as a mod
         // TODO: Make file DOWNLOADS asynchronous. DO NOT make writes to the mcmm.json file async
-        for (const dep of deps) {
-            if (allSlugs.includes(dep.mod.slug))
-                continue;
-
-            console.log(`Installing ${dep.mod.slug}.`);
-            allSlugs.push(dep.mod.slug);
-            await addPackage(dep.mod.slug, false, dep.dependencies.map(sub => sub.slug));
-            await downloadMod(dep.mod, dep.modFile, DOWNLOAD_PATH);
-        }
-
-        /*
-        await Promise.all(deps.map(dep => {
-            if (!allSlugs.includes(dep.mod.slug)) {
-                console.log(`Installing ${dep.mod.slug}.`);
-                allSlugs.push(dep.mod.slug);
-                return addPackage(dep.mod.slug, false, dep.dependencies.map(sub => sub.slug))
-                    .then(() => downloadMod(dep.mod, dep.modFile, DOWNLOAD_PATH));
-            }
-        }));
-        */
+        deps
+            .filter(dep => !modsToDownload.map(obj => obj.mod.slug).includes(dep.mod.slug))
+            .forEach(dep => modsToDownload.push({
+                mod: dep.mod,
+                modFile: dep.modFile,
+                dependencies: dep.dependencies,
+                isUserMod: false
+            }));
     }
+
+    // Write the mods to a file synchronously to avoid overriding
+    console.log(`Installing ${modsToDownload.map(item => item.mod.slug).join(', ')}...`);
+    for (const item of modsToDownload) {
+        const depSlugs = item.dependencies.map(mod => mod.slug);
+        await addPackage(item.mod.slug, item.isUserMod, depSlugs);
+    }
+
+    // Download all files asynchronously
+    await Promise.all(modsToDownload.map(item => downloadMod(item.mod, item.modFile, DOWNLOAD_PATH)));
+
+    console.log('Done!');
 }

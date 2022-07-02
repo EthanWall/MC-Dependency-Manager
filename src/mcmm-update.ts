@@ -6,7 +6,7 @@ import {ModLoaderType} from "node-curseforge/dist/objects/enums";
 const CF_KEY = process.env.CURSEFORGE_KEY;
 const DOWNLOAD_PATH = './mods/';
 
-export async function update() {
+export async function cmdUpdate() {
     if (!CF_KEY) {
         console.error('missing env variable for CURSEFORGE_KEY');
         return;

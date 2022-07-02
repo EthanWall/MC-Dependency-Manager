@@ -2,11 +2,11 @@ import fs from "fs";
 import {exists, formatJSON} from "./util";
 import {set, get, unset} from "lodash";
 
-type Package = {
+export type Package = {
     userMod: boolean,
     dependencies?: string[]
 }
-type PackageIndex = { [slug: string]: Package }
+export type PackageIndex = { [slug: string]: Package }
 
 // TODO: Better way then static path?
 export const PKG_FILE_PATH = './mcmm.json';

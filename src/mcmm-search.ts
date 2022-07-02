@@ -2,11 +2,11 @@ import inquirer from "inquirer";
 import Curseforge, {Mod} from "node-curseforge";
 import {sortModsSearch} from "./util";
 import {PagingOptions, SearchOptions} from "node-curseforge/dist/objects/types";
-import {install} from "./mcmm-install";
+import {cmdInstall} from "./mcmm-install";
 
 const CF_KEY = process.env.CURSEFORGE_KEY;
 
-export async function search(query: Array<string>, options: { interactive: boolean } = {interactive: false}) {
+export async function cmdSearch(query: Array<string>, options: { interactive: boolean } = {interactive: false}) {
     if (!CF_KEY) {
         console.error('missing env variable for CURSEFORGE_KEY');
         return;
@@ -43,7 +43,7 @@ export async function search(query: Array<string>, options: { interactive: boole
     const confirmChoice = await promptConfirmInstall(modChoice);
 
     if (confirmChoice) {
-        await install([modChoice.slug]);
+        await cmdInstall([modChoice.slug]);
     } else {
         console.error('operation cancelled');
     }

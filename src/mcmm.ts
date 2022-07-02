@@ -1,7 +1,8 @@
 import {Command, Option} from "commander";
-import {install} from "./mcmm-install";
-import {search} from "./mcmm-search";
-import {update} from "./mcmm-update";
+import {cmdInstall} from "./mcmm-install";
+import {cmdSearch} from "./mcmm-search";
+import {cmdUpdate} from "./mcmm-update";
+import {cmdRemove} from "./mcmm-remove";
 
 const program = new Command();
 
@@ -17,7 +18,7 @@ program
     .alias('s')
     .argument('<query...>', 'search text')
     .option('-i, --interactive', 'enable interactive user prompts?', false)
-    .action(search);
+    .action(cmdSearch);
 
 // mcmm install
 program
@@ -28,14 +29,21 @@ program
     .option('-v, --version <version>', 'Minecraft version string')
     .addOption(new Option('-l, --modloader <name>', 'Minecraft mod loader')
         .choices(['forge', 'fabric']))
-    .action(install);
+    .action(cmdInstall);
 
 // mcmm update
 program
     .command('update')
     .description('update any installed mods')
     .alias('u')
-    .action(update);
+    .action(cmdUpdate);
 
+// mcmm remove
+program
+    .command('remove')
+    .description('remove mods')
+    .alias('rm')
+    .argument('<slugs...>', 'shorthand name for the mods to remove')
+    .action(cmdRemove);
 
 program.parseAsync(process.argv);

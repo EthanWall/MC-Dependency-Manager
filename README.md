@@ -16,7 +16,7 @@ Integrated with CurseForge, MCMM aims to make installing, updating, and removing
 - [x] Download mods and their dependencies
     - [ ] Allow user to specify mod version
     - [ ] Allow user to pick dependencies
-- [ ] Update mods to the latest relevant version
+- [x] Update mods to the latest relevant version
 - [ ] Remove mods, and if necessary, their dependencies
 
 ## `mcmm.json` File
