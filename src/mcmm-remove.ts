@@ -3,61 +3,63 @@ import {getPackages, PackageIndex, removePackage} from "./files";
 export async function cmdRemove(slugs: Array<string>) {
     // TODO: Remove multiple mods at a time
 
-    const success = await removeOne(slugs[0]).catch(err => {
-        console.error(err);
-        return false;
-    });
-    if (success)
-        console.log(`Success!`);
-    else
-        console.log(`What happened?`);
+    const packages = await getPackages();
+    await removeOne(slugs[0], packages);
 }
 
-async function removeOne(slug: string): Promise<boolean> {
-    const packages = await getPackages();
+async function removeOne(slug: string, packages: PackageIndex): Promise<boolean> {
+    let dependencies;
+    try {
+        // Get the mod's dependencies
+        // There may be duplicates, due to recursion
+        // i.e. A depends on W and X. X also depends on W. ['W', 'X', 'W'] is returned
+        dependencies = getPackageDependencies(slug, packages, {recursive: true});
+    } catch (err) {
+        if (err instanceof RangeError) {
+            console.error(`${slug} has a cyclical dependency (i.e. A depends on B and B depends on A)! Please fix this`);
+            return false;
+        }
+        throw err;
+    }
 
-    // Fail if the package doesn't exist
-    if (!packages.hasOwnProperty(slug))
+    // A unique set of dependencies that will be removed in the final step
+    const dependenciesToRemove = new Set(dependencies);
+
+    // Check if we're trying to remove a dependency of another mod
+    if (getRefCount(slug, packages) !== 0) {
+        console.error(`Another mod relies on ${slug}`);
         return false;
+    }
 
-    // Number of times a packages is referenced as a dependency
-    const refCounts: { [key: string]: number } = {};
-    refCounts[slug] = getRefCount(slug, packages);
+    for (const primaryDep of dependenciesToRemove) {
+        // Check if the dependency is a user-installed mod
+        if (packages[primaryDep].userMod) {
+            // If so, gather a list of its dependencies, as they mustn't be removed
+            const subDeps = getPackageDependencies(primaryDep, packages, {recursive: true});
 
-    // Iterate over all dependencies
-    let dependencies = getPackageDependencies(slug, packages, {recursive: true});
-
-    // Filter user mods and their dependencies out
-    for (const dep of dependencies) {
-        if (!packages[dep].userMod)
+            // Remove the user-install dependency and its dependencies
+            subDeps.concat(primaryDep).forEach(userMod => dependenciesToRemove.delete(userMod));
             continue;
+        }
 
-        // Remove all instances of the user mod and its dependencies
-        dependencies = dependencies.filter(otherDep =>
-            ![dep, ...getPackageDependencies(dep, packages, {recursive: true})].includes(otherDep));
+        // Ensure no other mods are dependent on those dependencies
+        // Get number of mods that declare each primary dependencies as a dependency of their own
+        const totalReferences = getRefCount(primaryDep, packages);
+
+        // Get number of times the primary mod depends on the dependency
+        const ourReferences = dependencies.filter(name => name === primaryDep).length;
+
+        // Check if the number of references to each dep from this mod isn't equal to the total number of references to the dep
+        if (ourReferences !== totalReferences)
+            // If there are dependents, don't remove them
+            dependenciesToRemove.delete(primaryDep);
     }
 
-    for (const dep of dependencies) {
-        // Skip this dependency if it was added by a user
-        if (packages[dep].userMod)
-            continue;
-
-        // Find the number of times each dependency is referenced
-        if (!refCounts.hasOwnProperty(dep))
-            refCounts[dep] = getRefCount(slug, packages);
-
-        // Subtract one from the ref count because the package will be removed
-        refCounts[dep]--;
+    // Remove the package and its eligible dependencies
+    for (const dep of [...dependenciesToRemove].concat(slug)) {
+        await removePackage(dep);
     }
-
-    // Fail if any package is still depended on by another package that won't be removed
-    if (Object.values(refCounts).filter(num => num > 0).length > 0)
-        return false;
-
-    // Iterate over each package to remove. Must be synchronous for file write operations
-    for (const pkg of new Set(dependencies.concat(slug))) {
-        await removePackage(pkg);
-    }
+    console.log(`Removed ${[slug].concat(...dependenciesToRemove).join(', ')}`);
 
     return true;
 }
