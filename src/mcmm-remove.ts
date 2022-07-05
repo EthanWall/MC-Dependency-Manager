@@ -1,4 +1,8 @@
 import {getPackages, PackageIndex, removePackage} from "./files";
+import fs from "fs";
+import path from "path";
+
+const DOWNLOAD_PATH = './mods/';
 
 export async function cmdRemove(userSlugs: Array<string>) {
     const packages = await getPackages();
@@ -51,6 +55,15 @@ export async function cmdRemove(userSlugs: Array<string>) {
     for (const slug of chainSlugs) {
         await removePackage(slug);
     }
+
+    // Delete the files
+    await Promise.all(chainSlugs.map(async (slug) => {
+        let files = await fs.promises.readdir(DOWNLOAD_PATH);
+
+        // Find files matching the mod we're removing
+        files = files.filter(fn => fn.startsWith(`${slug}~`));
+        return Promise.all(files.map(file => fs.promises.unlink(path.posix.join(DOWNLOAD_PATH, file))));
+    }));
 
     console.log(`Removed ${chainSlugs.length ? chainSlugs.join(', ') : 'nothing'}`);
 }
