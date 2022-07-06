@@ -1,3 +1,5 @@
+#! /usr/bin/env node
+
 import {Argument, Command, Option} from "commander";
 import {cmdInstall} from "./mcmm-install";
 import {cmdSearch} from "./mcmm-search";

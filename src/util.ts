@@ -34,25 +34,24 @@ export async function exists(path: fs.PathLike): Promise<boolean> {
 
 /**
  * Sort a list of mods by relevance (whether the full query is included in the mod name)
- * @param index A list of mods to sort
+ * @param mods A list of mods to sort
  * @param query A string search query
  */
-export function sortModsSearch(index: Mod[], query: string): Mod[] {
+export function sortModsByQuery(mods: Mod[], query: string): Mod[] {
     const formattedQuery = query.toLowerCase();
 
-    return index.map(entry => {
-        // Create a new field in each Mod for search ranking
-        // @ts-ignore
-        entry.points = 0;
+    // Stores a relevance score along with each mod
+    const index: [Mod, number][] = mods.map(mod => {
+        let score = 0;
 
-        // Rank the mods based on relevancy
-        if (entry.name.toLowerCase().includes(formattedQuery))
-            // @ts-ignore
-            entry.points += 1;
+        // Increment the relevance score if the mod name matches the full query
+        if (mod.name.toLowerCase().includes(formattedQuery))
+            score++;
 
-        return entry;
-        // @ts-ignore
-    }).sort((a, b) => b.points - a.points);
+        return [mod, score];
+    });
+
+    return index.sort((a, b) => b[1] - a[1]).map(entry => entry[0]);
 }
 
 /**

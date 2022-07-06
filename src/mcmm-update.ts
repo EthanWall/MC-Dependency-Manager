@@ -16,8 +16,7 @@ export async function cmdUpdate() {
 
     // Get options
     const version = await getGameVersion();
-    // @ts-ignore
-    const modLoaderType = ModLoaderType[(await getModLoader()).toUpperCase()];
+    const modLoaderType = ModLoaderType[(await getModLoader()).toUpperCase() as keyof typeof ModLoaderType];
 
     // Find mods to install from the package file
     const slugs = Object.keys(await getPackages());

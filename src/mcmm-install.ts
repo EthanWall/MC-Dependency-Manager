@@ -32,8 +32,8 @@ export async function cmdInstall(slugs: Array<string>, options?: { version?: str
     modLoader ??= await getModLoader();
 
     const cf = new Curseforge(CF_KEY);
-    // @ts-ignore
-    const modLoaderType = ModLoaderType[modLoader.toUpperCase()];
+
+    const modLoaderType = ModLoaderType[modLoader.toUpperCase() as keyof typeof ModLoaderType];
 
     // Remove duplicate slugs
     slugs = [...new Set(slugs)];
