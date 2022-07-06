@@ -12,9 +12,9 @@ export async function cmdRemove(userSlugs: Array<string>) {
         chainSlugs = userSlugs.concat(...userSlugs.flatMap(slug => getPackageDependencies(slug, packages, {recursive: true})));
     } catch (err) {
         if (err instanceof TypeError) {
-            console.error('malformed JSON');
+            console.error('error: malformed JSON');
         } else if (err instanceof RangeError) {
-            console.error('circular dependencies are not supported');
+            console.error('error: circular dependencies are not supported');
         } else {
             throw err;
         }
@@ -83,21 +83,4 @@ function getPackageDependencies(slug: string, packages: PackageIndex, options?: 
     }
 
     return dependencies;
-}
-
-function getPackageDependents(slug: string, packages: PackageIndex, options?: { recursive?: boolean }): string[] {
-    const dependents = [];
-
-    for (const [key, pkg] of Object.entries(packages)) {
-        if (!pkg.dependencies?.includes(slug))
-            continue;
-
-        let sub: string[] = [];
-        if (options?.recursive)
-            sub = getPackageDependents(key, packages, {recursive: true});
-
-        dependents.push(key, ...sub);
-    }
-
-    return dependents;
 }

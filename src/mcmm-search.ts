@@ -45,7 +45,7 @@ export async function cmdSearch(query: Array<string>, options: { interactive: bo
     if (confirmChoice) {
         await cmdInstall([modChoice.slug]);
     } else {
-        console.error('operation cancelled');
+        console.error('Operation cancelled');
     }
 }
 
