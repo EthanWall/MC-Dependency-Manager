@@ -1,15 +1,20 @@
 import fs from "fs";
-import {exists, formatJSON} from "./util";
+import {formatJSON} from "./util";
 import {set, get, unset} from "lodash";
+import path from "path";
 
 export type Package = {
     userMod: boolean,
     dependencies?: string[]
 }
 export type PackageIndex = { [slug: string]: Package }
+export type PackageFile = {
+    version: string,
+    modLoader: "forge" | "fabric",
+    mods: PackageIndex
+}
 
-// TODO: Better way then static path?
-export const PKG_FILE_PATH = './mcmm.json';
+export const PKG_FILE_PATH = path.posix.join(process.cwd(), 'mcmm.json');
 
 /**
  * Return an object from a JSON file
@@ -29,6 +34,11 @@ async function getValue(key: string): Promise<any> {
 
         // Get the value from the object
         return get(data, key);
+    } catch (err: any) {
+        if (err.code === 'ENOENT')
+            throw new Error('file doesn\'t exist');
+        else
+            throw err;
     } finally {
         file?.close();
     }
@@ -40,9 +50,6 @@ async function getValue(key: string): Promise<any> {
  * @param value An object that will be parsed into JSON
  */
 async function setValue(key: string, value: any) {
-    if (!await exists(PKG_FILE_PATH))
-        await initFile();
-
     let file;
     try {
         // Open the file in read mode
@@ -63,6 +70,11 @@ async function setValue(key: string, value: any) {
 
         // Save the object to file
         await fs.promises.writeFile(file, formatJSON(data));
+    } catch (err: any) {
+        if (err.code === 'ENOENT')
+            throw new Error('file doesn\'t exist');
+        else
+            throw err;
     } finally {
         file?.close();
     }
@@ -73,9 +85,6 @@ async function setValue(key: string, value: any) {
  * @param key A decimal-seperated path to the object
  */
 async function deleteValue(key: string) {
-    if (!await exists(PKG_FILE_PATH))
-        await initFile();
-
     let file;
     try {
         // Open the file in read mode
@@ -96,6 +105,11 @@ async function deleteValue(key: string) {
 
         // Save the object to file
         await fs.promises.writeFile(file, formatJSON(data));
+    } catch (err: any) {
+        if (err.code === 'ENOENT')
+            throw new Error('file doesn\'t exist');
+        else
+            throw err;
     } finally {
         file?.close();
     }
@@ -104,9 +118,20 @@ async function deleteValue(key: string) {
 /**
  * Creates a file in the correct format. Will not override an existing file
  */
-async function initFile() {
-    // TODO: impl
-    throw Error('Not implemented');
+export async function initFile(version: string, modLoader: "forge" | "fabric") {
+    const data: PackageFile = {version, modLoader, mods: {}};
+    let file;
+    try {
+        file = await fs.promises.open(PKG_FILE_PATH, 'wx');
+        await fs.promises.writeFile(PKG_FILE_PATH, formatJSON(data));
+    } catch (err: any) {
+        if (err.code === 'EEXIST')
+            throw new Error('file already exists');
+        else
+            throw err;
+    } finally {
+        file?.close();
+    }
 }
 
 export async function getPackages(): Promise<PackageIndex> {

@@ -5,7 +5,6 @@ import {addPackage, getGameVersion, getModLoader} from "./files";
 import {ModFileNotFoundError, ModNotFoundError} from "./errors";
 
 const CF_KEY = process.env.CURSEFORGE_KEY;
-const DOWNLOAD_PATH = './mods/';
 
 export async function cmdInstall(slugs: Array<string>, options?: { version?: string, modloader?: "forge" | "fabric" }) {
     // TODO: Install from package file
@@ -95,7 +94,7 @@ export async function cmdInstall(slugs: Array<string>, options?: { version?: str
     }
 
     // Download all files asynchronously
-    await Promise.all(modsToDownload.map(item => downloadMod(item.mod, item.modFile, DOWNLOAD_PATH)));
+    await Promise.all(modsToDownload.map(item => downloadMod(item.mod, item.modFile)));
 
     console.log('Done!');
 }

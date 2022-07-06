@@ -4,7 +4,6 @@ import Curseforge from "node-curseforge";
 import {ModLoaderType} from "node-curseforge/dist/objects/enums";
 
 const CF_KEY = process.env.CURSEFORGE_KEY;
-const DOWNLOAD_PATH = './mods/';
 
 export async function cmdUpdate() {
     if (!CF_KEY) {
@@ -29,7 +28,7 @@ export async function cmdUpdate() {
 
     // Download the mod files
     for (let i = 0; i < mods.length; i++) {
-        const updated = await downloadMod(mods[i], modFiles[i], DOWNLOAD_PATH);
+        const updated = await downloadMod(mods[i], modFiles[i]);
         if (updated) console.log(`Updated ${mods[i].slug}.`);
     }
 }

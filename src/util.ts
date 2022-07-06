@@ -5,6 +5,7 @@ import path from "path";
 import fs from "fs";
 
 const MODS_CLASS_ID = 6;
+export const DOWNLOAD_PATH = path.posix.join(process.cwd(), 'mods/');
 
 /**
  * Stringify and format an object into JSON
@@ -141,7 +142,7 @@ export async function getDeepDependencies(modFile: ModFile, gameVersion: string,
  * @param downloadDir Path to the mods directory (i.e. "./mods")
  * @return Was a new file downloaded?
  */
-export async function downloadMod(mod: Mod, modFile: ModFile, downloadDir: fs.PathLike): Promise<boolean> {
+export async function downloadMod(mod: Mod, modFile: ModFile, downloadDir: fs.PathLike = DOWNLOAD_PATH): Promise<boolean> {
     const fileName = `${mod.slug}~${modFile.fileFingerprint}.jar`;
     const filePath = path.posix.join(downloadDir.toString(), fileName);
 

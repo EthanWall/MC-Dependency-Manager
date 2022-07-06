@@ -1,8 +1,9 @@
-import {Command, Option} from "commander";
+import {Argument, Command, Option} from "commander";
 import {cmdInstall} from "./mcmm-install";
 import {cmdSearch} from "./mcmm-search";
 import {cmdUpdate} from "./mcmm-update";
 import {cmdRemove} from "./mcmm-remove";
+import {cmdInit} from "./mcmm-init";
 
 const program = new Command();
 
@@ -45,5 +46,14 @@ program
     .alias('rm')
     .argument('<slugs...>', 'shorthand name for the mods to remove')
     .action(cmdRemove);
+
+// mcmm init
+program
+    .command('init')
+    .description('create a config file')
+    .argument('[version]', 'Minecraft version string')
+    .addArgument(new Argument('[modloader]', 'Minecraft mod loader')
+        .choices(['forge', 'fabric']))
+    .action(cmdInit);
 
 program.parseAsync(process.argv);

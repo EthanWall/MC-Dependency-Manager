@@ -1,8 +1,7 @@
 import {getPackages, PackageIndex, removePackage} from "./files";
 import fs from "fs";
 import path from "path";
-
-const DOWNLOAD_PATH = './mods/';
+import {DOWNLOAD_PATH} from "./util";
 
 export async function cmdRemove(userSlugs: Array<string>) {
     const packages = await getPackages();
