@@ -12,7 +12,7 @@ const program = new Command();
 program
     .name('mcmm')
     .description('The package manager for modded Minecraft')
-    .version('0.0.1');
+    .version('0.1.0');
 
 // mcmm search
 program
