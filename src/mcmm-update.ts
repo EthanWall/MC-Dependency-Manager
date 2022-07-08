@@ -27,7 +27,7 @@ export async function cmdUpdate() {
 
     // Download the mod files
     for (let i = 0; i < mods.length; i++) {
-        const updated = await downloadMod(mods[i], modFiles[i]);
+        const updated = await downloadMod(mods[i].slug, modFiles[i]);
         if (updated) console.log(`Updated ${mods[i].slug}.`);
     }
 }

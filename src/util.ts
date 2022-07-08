@@ -1,5 +1,5 @@
 import {Curseforge, Game, Mod, ModFile} from "node-curseforge";
-import {ModLoaderType} from "node-curseforge/dist/objects/enums";
+import {FileRelationType, ModLoaderType} from "node-curseforge/dist/objects/enums";
 import {ModFileNotFoundError, ModNotFoundError} from "./errors";
 import path from "path";
 import fs from "fs";
@@ -103,10 +103,15 @@ export async function getLatestModFile(mod: Mod, gameVersion: string, modLoader:
  * Get an array of dependencies that the mod declares directly (won't find dependencies of dependencies)
  * @param modFile The mod file to find dependencies for
  * @param cf A Curseforge instance
+ * @param optionalDependencies Should optional dependencies be included in the returned array?
  */
-export function getDirectDependencies(modFile: ModFile, cf: Curseforge): Promise<Mod[]> {
-    // Get the mod ID's of the dependencies
-    const ids = modFile.dependencies.map(dep => dep.modId);
+export function getShallowDependencies(modFile: ModFile, cf: Curseforge, optionalDependencies = false): Promise<Mod[]> {
+    const ids = modFile.dependencies
+        // Filter for only required (or optional) dependencies
+        .filter(dep => dep.relationType === FileRelationType.REQUIRED_DEPENDENCY ||
+            (optionalDependencies ? dep.relationType === FileRelationType.OPTIONAL_DEPENDENCY : false))
+        // Get dependency mod ID's
+        .map(dep => dep.modId);
 
     // Get a Mod for each mod ID
     return Promise.all(ids.map(id => cf.get_mod(id)));
@@ -119,10 +124,11 @@ export function getDirectDependencies(modFile: ModFile, cf: Curseforge): Promise
  * @param modLoader The Minecraft mod loader
  * @param cf A Curseforge instance
  */
+/*
 export async function getDeepDependencies(modFile: ModFile, gameVersion: string, modLoader: ModLoaderType, cf: Curseforge):
     Promise<{ mod: Mod; modFile: ModFile; dependencies: Mod[] }[]> {
 
-    const primaryDeps = await getDirectDependencies(modFile, cf);
+    const primaryDeps = await getShallowDependencies(modFile, cf);
 
     const allDeps: { mod: Mod, modFile: ModFile, dependencies: Mod[] }[] = [];
     for (const dep of primaryDeps) {
@@ -134,27 +140,57 @@ export async function getDeepDependencies(modFile: ModFile, gameVersion: string,
     return allDeps;
 }
 
+
+ */
+
+/*
+export async function getDeepDependencies(modFile: ModFile, gameVersion: string, modLoader: ModLoaderType, cf: Curseforge, optionalDependencies = false) {
+    const result: { [slug: string]: { mod: Mod, modFile: ModFile, shallowDependencies: string[] } } = {};
+
+    const primaryDeps = await getShallowDependencies(modFile, cf, optionalDependencies);
+    await Promise.all(primaryDeps.map(async (primDep) => {
+        if (result.hasOwnProperty(primDep.slug))
+            return;
+
+        const primDepFile = await getLatestModFile(primDep, gameVersion, modLoader);
+        // Recursively find mod dependencies
+        Object.entries(await getDeepDependencies(primDepFile, gameVersion, modLoader, cf, optionalDependencies))
+            .forEach(([key, value]) => result[key] = value);
+
+        result[primDep.slug] = {
+            mod: primDep,
+            modFile: primDepFile,
+            shallowDependencies: await getShallowDependencies(primDepFile, cf, optionalDependencies)
+                .then(deps => deps.map(dep => dep.slug))
+        };
+    }));
+
+    return result;
+}
+
+ */
+
 /**
  * Downloads a mod given that it has not already been downloaded
- * @param mod The mod associated with the file. Used for naming
+ * @param modSlug The human-readable ID of the mod
  * @param modFile The mod file to download
  * @param downloadDir Path to the mods directory (i.e. "./mods")
  * @return Was a new file downloaded?
  */
-export async function downloadMod(mod: Mod, modFile: ModFile, downloadDir: fs.PathLike = DOWNLOAD_PATH): Promise<boolean> {
-    const fileName = `${mod.slug}~${modFile.fileFingerprint}.jar`;
+export async function downloadMod(modSlug: string, modFile: ModFile, downloadDir: fs.PathLike = DOWNLOAD_PATH): Promise<boolean> {
+    const fileName = `${modSlug}~${modFile.fileFingerprint}.jar`;
     const filePath = path.posix.join(downloadDir.toString(), fileName);
 
     // Create the download directory if it doesn't exist
     await fs.promises.mkdir(downloadDir, {recursive: true});
 
     if (await exists(filePath)) {
-        console.log(`The latest version of ${mod.slug} already exists`);
+        console.log(`The latest version of ${modSlug} already exists`);
         return false;
     }
 
     // Remove old versions of mods
-    const oldFiles = (await fs.promises.readdir(downloadDir)).filter(fn => fn.startsWith(`${mod.slug}~`));
+    const oldFiles = (await fs.promises.readdir(downloadDir)).filter(fn => fn.startsWith(`${modSlug}~`));
     for (const oldFile of oldFiles) {
         await fs.promises.unlink(path.posix.join(downloadDir.toString(), oldFile));
     }
@@ -163,7 +199,7 @@ export async function downloadMod(mod: Mod, modFile: ModFile, downloadDir: fs.Pa
     const wasSuccessful = await modFile.download(filePath, true);
 
     if (!wasSuccessful) {
-        console.error(`${mod.slug} failed to download`);
+        console.error(`${modSlug} failed to download`);
         return false;
     }
 

@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import {DOWNLOAD_PATH} from "./util";
 
+// TODO: Make circular dep removal work
 export async function cmdRemove(userSlugs: Array<string>) {
     const packages = await getPackages();
 
