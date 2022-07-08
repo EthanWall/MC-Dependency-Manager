@@ -3,7 +3,6 @@ import fs from "fs";
 import path from "path";
 import {DOWNLOAD_PATH} from "./util";
 
-// TODO: Make circular dep removal work
 export async function cmdRemove(userSlugs: Array<string>) {
     const packages = await getPackages();
 
@@ -12,13 +11,10 @@ export async function cmdRemove(userSlugs: Array<string>) {
     try {
         chainSlugs = userSlugs.concat(...userSlugs.flatMap(slug => getPackageDependencies(slug, packages, {recursive: true})));
     } catch (err) {
-        if (err instanceof TypeError) {
+        if (err instanceof TypeError)
             console.error('error: malformed JSON');
-        } else if (err instanceof RangeError) {
-            console.error('error: circular dependencies are not supported');
-        } else {
+        else
             throw err;
-        }
         return;
     }
     chainSlugs = [...new Set(chainSlugs)];
@@ -74,14 +70,20 @@ function getReferences(slug: string, packages: PackageIndex): string[] {
 }
 
 function getPackageDependencies(slug: string, packages: PackageIndex, options?: { recursive?: boolean }): string[] {
-    const pkgObj = packages[slug];
-    const dependencies = pkgObj.dependencies ?? [];
+    const finalDependencies: string[] = [];
 
-    if (options?.recursive) {
-        for (const depSlug of dependencies) {
-            dependencies.push(...getPackageDependencies(depSlug, packages, {recursive: true}));
-        }
+    function gatherDependencies(otherSlug: string) {
+        if (finalDependencies.includes(otherSlug))
+            return;
+
+        const pkg = packages[otherSlug];
+        const deps = pkg.dependencies ?? [];
+        finalDependencies.push(...deps);
+
+        if (options?.recursive)
+            deps.forEach(dep => gatherDependencies(dep));
     }
 
-    return dependencies;
+    gatherDependencies(slug);
+    return finalDependencies;
 }
