@@ -1,6 +1,6 @@
 import fs from "fs";
-import {formatJSON} from "./util";
-import {set, get, unset} from "lodash";
+import {formatJSON} from "./util.js";
+import {set, get, unset} from "lodash-es";
 import path from "path";
 
 export type Package = {

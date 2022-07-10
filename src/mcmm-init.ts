@@ -1,5 +1,5 @@
 import inquirer from "inquirer";
-import {initFile} from "./files";
+import {initFile} from "./files.js";
 
 export async function cmdInit(version?: string, modLoader?: 'forge' | 'fabric') {
     version ??= await promptVersionChoice();

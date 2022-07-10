@@ -1,6 +1,15 @@
 {
-  "extends": "@tsconfig/node16/tsconfig.json",
   "compilerOptions": {
+    "lib": [
+      "esnext"
+    ],
+    "module": "esnext",
+    "target": "es2022",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
     "sourceMap": true,
     "outDir": "build"
   },

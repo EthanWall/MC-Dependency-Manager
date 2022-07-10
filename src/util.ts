@@ -1,6 +1,6 @@
-import {Curseforge, Game, Mod, ModFile} from "node-curseforge";
-import {FileRelationType, ModLoaderType} from "node-curseforge/dist/objects/enums";
-import {ModFileNotFoundError, ModNotFoundError} from "./errors";
+import {Mod, ModFile} from "node-curseforge";
+import {FileRelationType, ModLoaderType} from "node-curseforge/dist/objects/enums.js";
+import {ModFileNotFoundError, ModNotFoundError} from "./errors.js";
 import path from "path";
 import fs from "fs";
 
@@ -57,10 +57,9 @@ export function sortModsByQuery(mods: Mod[], query: string): Mod[] {
 /**
  * Get a Mod from Curseforge using a slug
  * @param slug A Curseforge slug. Human-readable mod ID
- * @param mc A Minecraft instance
  * @throws {ModNotFoundError} Throws if the mod isn't found on Curseforge
  */
-export async function getModFromSlug(slug: string, mc: Game): Promise<Mod> {
+export async function getModFromSlug(slug: string): Promise<Mod> {
     let options = {
         classId: MODS_CLASS_ID,
         slug
@@ -102,14 +101,14 @@ export async function getLatestModFile(mod: Mod, gameVersion: string, modLoader:
 /**
  * Get an array of dependencies that the mod declares directly (won't find dependencies of dependencies)
  * @param modFile The mod file to find dependencies for
- * @param cf A Curseforge instance
  * @param optionalDependencies Should optional dependencies be included in the returned array?
  */
-export function getShallowDependencies(modFile: ModFile, cf: Curseforge, optionalDependencies = false): Promise<Mod[]> {
+export function getShallowDependencies(modFile: ModFile, optionalDependencies = false): Promise<Mod[]> {
     const ids = modFile.dependencies
         // Filter for only required (or optional) dependencies
-        .filter(dep => dep.relationType === FileRelationType.REQUIRED_DEPENDENCY ||
-            (optionalDependencies ? dep.relationType === FileRelationType.OPTIONAL_DEPENDENCY : false))
+        .filter(dep =>
+            dep.relationType === FileRelationType.REQUIRED_DEPENDENCY ||
+            (optionalDependencies && dep.relationType === FileRelationType.OPTIONAL_DEPENDENCY))
         // Get dependency mod ID's
         .map(dep => dep.modId);
 

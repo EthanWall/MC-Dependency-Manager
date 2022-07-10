@@ -1,7 +1,7 @@
-import {getPackages, PackageIndex, removePackage} from "./files";
+import {getPackages, PackageIndex, removePackage} from "./files.js";
 import fs from "fs";
 import path from "path";
-import {DOWNLOAD_PATH} from "./util";
+import {DOWNLOAD_PATH} from "./util.js";
 
 export async function cmdRemove(userSlugs: Array<string>) {
     const packages = await getPackages();

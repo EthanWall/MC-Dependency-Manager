@@ -1,19 +1,10 @@
 import inquirer from "inquirer";
-import Curseforge, {Mod} from "node-curseforge";
-import {sortModsByQuery} from "./util";
-import {PagingOptions, SearchOptions} from "node-curseforge/dist/objects/types";
-import {cmdInstall} from "./mcmm-install";
-
-const CF_KEY = process.env.CURSEFORGE_KEY;
+import {Mod} from "node-curseforge";
+import {sortModsByQuery} from "./util.js";
+import {PagingOptions, SearchOptions} from "node-curseforge/dist/objects/types.js";
+import {cmdInstall} from "./mcmm-install.js";
 
 export async function cmdSearch(query: Array<string>, options: { interactive: boolean } = {interactive: false}) {
-    if (!CF_KEY) {
-        console.error('missing env variable for CURSEFORGE_KEY');
-        return;
-    }
-
-    const cf = new Curseforge(CF_KEY);
-
     // Create a string out of an argument array
     const queryString = query.join(' ');
 
@@ -27,9 +18,7 @@ export async function cmdSearch(query: Array<string>, options: { interactive: bo
     };
 
     // Mods sorted by relevance
-    const sortedMods = await cf.get_game('minecraft')
-        .then(mc => mc.search_mods(searchParams))
-        .then(mods => sortModsByQuery(mods, queryString));
+    const sortedMods = await mc.search_mods(searchParams).then(mods => sortModsByQuery(mods, queryString));
 
     if (!options.interactive) {
         sortedMods.forEach((mod: Mod) => console.log(`${mod.slug} \\ ${mod.name} \\ ${mod.summary}`));

@@ -1,26 +1,16 @@
-import {getGameVersion, getModLoader, getPackages} from "./files";
-import {downloadMod, getLatestModFile, getModFromSlug} from "./util";
-import Curseforge from "node-curseforge";
-import {ModLoaderType} from "node-curseforge/dist/objects/enums";
+import {getGameVersion, getModLoader, getPackages} from "./files.js";
+import {downloadMod, getLatestModFile, getModFromSlug} from "./util.js";
+import {ModLoaderType} from "node-curseforge/dist/objects/enums.js";
 
-const CF_KEY = process.env.CURSEFORGE_KEY;
-
+// TODO: Make update fetch new deps from CurseForge
 export async function cmdUpdate() {
-    if (!CF_KEY) {
-        console.error('missing env variable for CURSEFORGE_KEY');
-        return;
-    }
-
-    const cf = new Curseforge(CF_KEY);
-    const mc = await cf.get_game('minecraft');
-
     // Get options
     const version = await getGameVersion();
     const modLoaderType = ModLoaderType[(await getModLoader()).toUpperCase() as keyof typeof ModLoaderType];
 
     // Find mods to install from the package file
     const slugs = Object.keys(await getPackages());
-    const mods = await Promise.all(slugs.map(slug => getModFromSlug(slug, mc)));
+    const mods = await Promise.all(slugs.map(slug => getModFromSlug(slug)));
 
     // Find mod files
     const modFiles = await Promise.all(mods.map(mod => getLatestModFile(mod, version, modLoaderType)));
