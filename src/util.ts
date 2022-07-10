@@ -1,4 +1,4 @@
-import {Mod, ModFile} from "node-curseforge";
+import type {Mod, ModFile} from "node-curseforge";
 import {FileRelationType, ModLoaderType} from "node-curseforge/dist/objects/enums.js";
 import {ModFileNotFoundError, ModNotFoundError} from "./errors.js";
 import path from "path";
@@ -65,6 +65,7 @@ export async function getModFromSlug(slug: string): Promise<Mod> {
         slug
     };
 
+    const mc = await cf.get_game('minecraft');
     const mods = await mc.search_mods(options);
 
     if (!mods[0]) {
@@ -92,7 +93,7 @@ export async function getLatestModFile(mod: Mod, gameVersion: string, modLoader:
 
     // Throw an error if a file doesn't exist
     if (!files[0]) {
-        throw new ModFileNotFoundError(mod, gameVersion, ModLoaderType[modLoader]);
+        throw new ModFileNotFoundError(mod, gameVersion, ModLoaderType[modLoader] as string);
     }
 
     return files[0];
@@ -115,59 +116,6 @@ export function getShallowDependencies(modFile: ModFile, optionalDependencies = 
     // Get a Mod for each mod ID
     return Promise.all(ids.map(id => cf.get_mod(id)));
 }
-
-/**
- * Return every package that modFile depends on (including those dependencies deps, etc.)
- * @param modFile The mod file associated with the mod to check dependencies for
- * @param gameVersion The Minecraft version string
- * @param modLoader The Minecraft mod loader
- * @param cf A Curseforge instance
- */
-/*
-export async function getDeepDependencies(modFile: ModFile, gameVersion: string, modLoader: ModLoaderType, cf: Curseforge):
-    Promise<{ mod: Mod; modFile: ModFile; dependencies: Mod[] }[]> {
-
-    const primaryDeps = await getShallowDependencies(modFile, cf);
-
-    const allDeps: { mod: Mod, modFile: ModFile, dependencies: Mod[] }[] = [];
-    for (const dep of primaryDeps) {
-        const depFile = await getLatestModFile(dep, gameVersion, modLoader);
-        const subDeps = await getDeepDependencies(depFile, gameVersion, modLoader, cf);
-        allDeps.push({mod: dep, modFile: depFile, dependencies: subDeps.map(obj => obj.mod)}, ...subDeps);
-    }
-
-    return allDeps;
-}
-
-
- */
-
-/*
-export async function getDeepDependencies(modFile: ModFile, gameVersion: string, modLoader: ModLoaderType, cf: Curseforge, optionalDependencies = false) {
-    const result: { [slug: string]: { mod: Mod, modFile: ModFile, shallowDependencies: string[] } } = {};
-
-    const primaryDeps = await getShallowDependencies(modFile, cf, optionalDependencies);
-    await Promise.all(primaryDeps.map(async (primDep) => {
-        if (result.hasOwnProperty(primDep.slug))
-            return;
-
-        const primDepFile = await getLatestModFile(primDep, gameVersion, modLoader);
-        // Recursively find mod dependencies
-        Object.entries(await getDeepDependencies(primDepFile, gameVersion, modLoader, cf, optionalDependencies))
-            .forEach(([key, value]) => result[key] = value);
-
-        result[primDep.slug] = {
-            mod: primDep,
-            modFile: primDepFile,
-            shallowDependencies: await getShallowDependencies(primDepFile, cf, optionalDependencies)
-                .then(deps => deps.map(dep => dep.slug))
-        };
-    }));
-
-    return result;
-}
-
- */
 
 /**
  * Downloads a mod given that it has not already been downloaded

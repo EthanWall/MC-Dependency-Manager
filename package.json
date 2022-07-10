@@ -1,10 +1,10 @@
 {
   "name": "mcmm",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "",
   "main": "build/mcmm.js",
   "bin": "build/mcmm.js",
-  "type": "module",
+  "type": "commonjs",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -14,14 +14,13 @@
   "dependencies": {
     "commander": "^9.3.0",
     "inquirer": "^8.2.4",
-    "lodash-es": "^4.17.21",
+    "lodash": "^4.17.21",
     "node-curseforge": "^1.1.0"
   },
   "devDependencies": {
-    "@tsconfig/node16": "^1.0.3",
+    "@tsconfig/node16-strictest": "^1.0.3",
     "@types/inquirer": "^8.2.1",
     "@types/lodash": "^4.14.182",
-    "@types/lodash-es": "^4.17.6",
     "typescript": "^4.7.4"
   },
   "pkg": {

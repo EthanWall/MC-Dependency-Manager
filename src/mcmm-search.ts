@@ -1,10 +1,12 @@
 import inquirer from "inquirer";
-import {Mod} from "node-curseforge";
+import type {Mod} from "node-curseforge";
 import {sortModsByQuery} from "./util.js";
-import {PagingOptions, SearchOptions} from "node-curseforge/dist/objects/types.js";
+import type {PagingOptions, SearchOptions} from "node-curseforge/dist/objects/types.js";
 import {cmdInstall} from "./mcmm-install.js";
 
 export async function cmdSearch(query: Array<string>, options: { interactive: boolean } = {interactive: false}) {
+    const mc = await cf.get_game('minecraft');
+
     // Create a string out of an argument array
     const queryString = query.join(' ');
 

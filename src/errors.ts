@@ -1,4 +1,4 @@
-import {Mod} from "node-curseforge";
+import type {Mod} from "node-curseforge";
 
 export class ModFileNotFoundError extends Error {
     readonly modSlug: string;

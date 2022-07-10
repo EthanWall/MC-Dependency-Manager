@@ -6,28 +6,26 @@ import {cmdSearch} from "./mcmm-search.js";
 import {cmdUpdate} from "./mcmm-update.js";
 import {cmdRemove} from "./mcmm-remove.js";
 import {cmdInit} from "./mcmm-init.js";
-import {Curseforge, Game} from "node-curseforge";
+import {Curseforge} from "node-curseforge";
 
 declare global {
     var cf: Curseforge;
-    var mc: Game;
 }
 
-const CF_KEY = process.env.CURSEFORGE_KEY;
+const CF_KEY = process.env["CURSEFORGE_KEY"];
 if (!CF_KEY) {
     console.error('missing env variable for CURSEFORGE_KEY');
     process.exit(1);
 }
 
 global.cf = new Curseforge(CF_KEY);
-global.mc = await cf.get_game('minecraft');
 
 const program = new Command();
 
 program
     .name('mcmm')
     .description('The package manager for modded Minecraft')
-    .version('0.1.0');
+    .version('0.1.1');
 
 // mcmm search
 program

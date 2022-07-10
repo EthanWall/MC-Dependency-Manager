@@ -1,14 +1,18 @@
 import fs from "fs";
 import {formatJSON} from "./util.js";
-import {set, get, unset} from "lodash-es";
+import {set, get, unset} from "lodash";
 import path from "path";
 
-export type Package = {
+export interface Package {
     userMod: boolean,
     dependencies?: string[]
 }
-export type PackageIndex = { [slug: string]: Package }
-export type PackageFile = {
+
+export interface PackageIndex {
+    [slug: string]: Package;
+}
+
+export interface PackageFile {
     version: string,
     modLoader: "forge" | "fabric",
     mods: PackageIndex

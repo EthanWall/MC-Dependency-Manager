@@ -1,6 +1,7 @@
 import {getGameVersion, getModLoader, getPackages} from "./files.js";
 import {downloadMod, getLatestModFile, getModFromSlug} from "./util.js";
 import {ModLoaderType} from "node-curseforge/dist/objects/enums.js";
+import type {Mod, ModFile} from "node-curseforge";
 
 // TODO: Make update fetch new deps from CurseForge
 export async function cmdUpdate() {
@@ -17,7 +18,9 @@ export async function cmdUpdate() {
 
     // Download the mod files
     for (let i = 0; i < mods.length; i++) {
-        const updated = await downloadMod(mods[i].slug, modFiles[i]);
-        if (updated) console.log(`Updated ${mods[i].slug}.`);
+        const mod = mods[i] as Mod;
+        const modFile = modFiles[i] as ModFile;
+        const updated = await downloadMod(mod.slug, modFile);
+        if (updated) console.log(`Updated ${mod.slug}.`);
     }
 }

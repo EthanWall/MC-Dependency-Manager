@@ -1,4 +1,4 @@
-import {getPackages, PackageIndex, removePackage} from "./files.js";
+import {getPackages, Package, PackageIndex, removePackage} from "./files.js";
 import fs from "fs";
 import path from "path";
 import {DOWNLOAD_PATH} from "./util.js";
@@ -6,9 +6,18 @@ import {DOWNLOAD_PATH} from "./util.js";
 export async function cmdRemove(userSlugs: Array<string>) {
     const packages = await getPackages();
 
+    // Check if the argument exists in the package file
+    for (const slug of userSlugs) {
+        if (packages.hasOwnProperty(slug))
+            continue;
+        console.error(`${slug} is not declared in the package file`);
+        return;
+    }
+
     // Find a unique list of all packages in the removal chain
     let chainSlugs;
     try {
+        // Find the dependencies for each arg slug
         chainSlugs = userSlugs.concat(...userSlugs.flatMap(slug => getPackageDependencies(slug, packages, {recursive: true})));
     } catch (err) {
         if (err instanceof TypeError)
@@ -21,12 +30,12 @@ export async function cmdRemove(userSlugs: Array<string>) {
 
     // Mark all mods in the command arguments as non-user mods
     // This is needed as user mods can't be removed
-    userSlugs.forEach(slug => packages[slug].userMod = false);
+    userSlugs.forEach(slug => (packages[slug] as Package).userMod = false);
 
     // Remove all user mods from the list of packages to be removed
     for (let i = 0; i < chainSlugs.length; i++) {
-        const slug = chainSlugs[i];
-        if (packages[slug].userMod)
+        const slug = chainSlugs[i] as string;
+        if ((packages[slug] as Package).userMod)
             chainSlugs.splice(i, 1);
     }
 
@@ -76,7 +85,7 @@ function getPackageDependencies(slug: string, packages: PackageIndex, options?: 
         if (finalDependencies.includes(otherSlug))
             return;
 
-        const pkg = packages[otherSlug];
+        const pkg = packages[otherSlug] as Package;
         const deps = pkg.dependencies ?? [];
         finalDependencies.push(...deps);
 

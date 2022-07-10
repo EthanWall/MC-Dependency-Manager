@@ -1,8 +1,8 @@
-import {ModFile} from "node-curseforge";
+import type {ModFile} from "node-curseforge";
 import {ModLoaderType} from "node-curseforge/dist/objects/enums.js";
 import {downloadMod, getShallowDependencies, getLatestModFile, getModFromSlug} from "./util.js";
 import {addPackage, getGameVersion, getModLoader} from "./files.js";
-import {cloneDeep} from "lodash-es";
+import {cloneDeep} from "lodash";
 
 export async function cmdInstall(slugs: Array<string>, options?: { version?: string, modloader?: "forge" | "fabric" }) {
     // TODO: Install from package file
@@ -33,7 +33,7 @@ export async function cmdInstall(slugs: Array<string>, options?: { version?: str
         const parentModFile = await getLatestModFile(parentMod, version, modLoaderType);
 
         // Find the mod's direct dependencies
-        const parentDeps = await getShallowDependencies(parentModFile, true);
+        const parentDeps = await getShallowDependencies(parentModFile, false);
 
         // Add the parent mod to the list before iterating over dependencies
         index[slug] = {modFile: parentModFile, isUserMod, directDependencies: parentDeps.map(mod => mod.slug)};
@@ -48,8 +48,8 @@ export async function cmdInstall(slugs: Array<string>, options?: { version?: str
     }
 
     // Add info to a list of mods to install
-    console.log("Gathering packages... ");
     for (const slug of slugs) {
+        console.log(`Gathering ${slug}...`);
         installIndex = await gatherModInfo(slug, true, installIndex);
     }
 
