@@ -8,7 +8,7 @@ export async function cmdRemove(userSlugs: Array<string>) {
 
     // Check if the argument exists in the package file
     for (const slug of userSlugs) {
-        if (packages.hasOwnProperty(slug))
+        if (slug in packages)
             continue;
         console.error(`${slug} is not declared in the package file`);
         return;
@@ -50,7 +50,7 @@ export async function cmdRemove(userSlugs: Array<string>) {
 
         // Decrement the reference count of each dependency
         dependencies.forEach(dep => {
-            if (refCounts.hasOwnProperty(dep))
+            if (dep in refCounts)
                 refCounts[dep]--;
         });
     });

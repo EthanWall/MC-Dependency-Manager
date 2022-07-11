@@ -59,7 +59,8 @@ function promptModChoice(mods: Mod[]): Promise<Mod> {
     ];
 
     // Returns a Promise<Mod> object with the chosen mod data
-    return inquirer.prompt(questions).then(answers => answers[0]);
+    return inquirer.prompt(questions)
+      .then((answers: { '0': Mod }) => answers[0]);
 }
 
 function promptConfirmInstall(mod: Mod): Promise<boolean> {
@@ -71,5 +72,6 @@ function promptConfirmInstall(mod: Mod): Promise<boolean> {
         }
     ];
 
-    return inquirer.prompt(questions).then(answers => answers[0]);
+    return inquirer.prompt(questions)
+      .then((answers: { '0': boolean }) => answers[0]);
 }

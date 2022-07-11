@@ -9,6 +9,7 @@ import {cmdInit} from "./mcmm-init.js";
 import {Curseforge} from "node-curseforge";
 
 declare global {
+    // eslint-disable-next-line no-var
     var cf: Curseforge;
 }
 
@@ -71,4 +72,4 @@ program
         .choices(['forge', 'fabric']))
     .action(cmdInit);
 
-program.parseAsync(process.argv);
+void program.parseAsync(process.argv);

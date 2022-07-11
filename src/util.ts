@@ -22,7 +22,8 @@ export function formatJSON(obj: object): string {
 export async function exists(path: fs.PathLike): Promise<boolean> {
     try {
         await fs.promises.stat(path);
-    } catch (err: any) {
+    } catch (err) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         if (err.code === 'ENOENT') {
             return false;
         } else {
@@ -60,7 +61,7 @@ export function sortModsByQuery(mods: Mod[], query: string): Mod[] {
  * @throws {ModNotFoundError} Throws if the mod isn't found on Curseforge
  */
 export async function getModFromSlug(slug: string): Promise<Mod> {
-    let options = {
+    const options = {
         classId: MODS_CLASS_ID,
         slug
     };

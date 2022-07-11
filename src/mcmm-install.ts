@@ -23,7 +23,7 @@ export async function cmdInstall(slugs: Array<string>, options?: { version?: str
         indexIn: { [slug: string]: { modFile: ModFile, isUserMod: boolean, directDependencies: string[] } } = {},
     ) {
         // Skip gathering info if the mod has already been processed. Prevents infinite recursion
-        if (indexIn.hasOwnProperty(slug))
+        if (slug in indexIn)
             return indexIn;
 
         // Make a deep copy of the index that we can freely mutate

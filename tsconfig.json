@@ -2,7 +2,8 @@
   "extends": "@tsconfig/node16-strictest",
   "compilerOptions": {
     "sourceMap": true,
-    "outDir": "build"
+    "outDir": "build",
+    "useUnknownInCatchVariables": false
   },
   "include": [
     "src/**/*"

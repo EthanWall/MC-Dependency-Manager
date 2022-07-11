@@ -24,7 +24,8 @@ export const PKG_FILE_PATH = path.posix.join(process.cwd(), 'mcmm.json');
  * Return an object from a JSON file
  * @param key A decimal-seperated path to the object
  */
-async function getValue(key: string): Promise<any> {
+async function getValue<T>(key: string): Promise<T> {
+  // TODO: Add error handling for wrongly typed return value
     let file;
     try {
         // Open the file in read mode
@@ -34,17 +35,18 @@ async function getValue(key: string): Promise<any> {
         const buffer = await fs.promises.readFile(file);
 
         // Parse the file and store the data as an object
-        const data = JSON.parse(buffer.toString());
+        const data = JSON.parse(buffer.toString()) as object;
 
         // Get the value from the object
-        return get(data, key);
-    } catch (err: any) {
+        return get(data, key) as T;
+    } catch (err) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         if (err.code === 'ENOENT')
             throw new Error('file doesn\'t exist');
         else
             throw err;
     } finally {
-        file?.close();
+        await file?.close();
     }
 }
 
@@ -53,7 +55,7 @@ async function getValue(key: string): Promise<any> {
  * @param key A decimal-seperated path to the object
  * @param value An object that will be parsed into JSON
  */
-async function setValue(key: string, value: any) {
+async function setValue(key: string, value: unknown) {
     let file;
     try {
         // Open the file in read mode
@@ -63,24 +65,25 @@ async function setValue(key: string, value: any) {
         const buffer = await fs.promises.readFile(file);
 
         // Parse the file and store the data as an object
-        let data = JSON.parse(buffer.toString());
+        const data = JSON.parse(buffer.toString()) as object;
 
         // Modify the object
         set(data, key, value);
 
         // Clear the file and open it in write mode
-        file.close();
+        await file.close();
         file = await fs.promises.open(PKG_FILE_PATH, 'w');
 
         // Save the object to file
         await fs.promises.writeFile(file, formatJSON(data));
-    } catch (err: any) {
+    } catch (err) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         if (err.code === 'ENOENT')
             throw new Error('file doesn\'t exist');
         else
             throw err;
     } finally {
-        file?.close();
+        await file?.close();
     }
 }
 
@@ -98,24 +101,25 @@ async function deleteValue(key: string) {
         const buffer = await fs.promises.readFile(file);
 
         // Parse the file and store the data as an object
-        let data = JSON.parse(buffer.toString());
+        const data = JSON.parse(buffer.toString()) as object;
 
         // Modify the object
         unset(data, key);
 
         // Clear the file and open it in write mode
-        file.close();
+        await file.close();
         file = await fs.promises.open(PKG_FILE_PATH, 'w');
 
         // Save the object to file
         await fs.promises.writeFile(file, formatJSON(data));
-    } catch (err: any) {
+    } catch (err) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         if (err.code === 'ENOENT')
             throw new Error('file doesn\'t exist');
         else
             throw err;
     } finally {
-        file?.close();
+        await file?.close();
     }
 }
 
@@ -128,13 +132,14 @@ export async function initFile(version: string, modLoader: "forge" | "fabric") {
     try {
         file = await fs.promises.open(PKG_FILE_PATH, 'wx');
         await fs.promises.writeFile(PKG_FILE_PATH, formatJSON(data));
-    } catch (err: any) {
+    } catch (err) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         if (err.code === 'EEXIST')
             throw new Error('file already exists');
         else
             throw err;
     } finally {
-        file?.close();
+        await file?.close();
     }
 }
 
@@ -147,10 +152,10 @@ export async function getGameVersion(): Promise<string> {
 }
 
 export async function getModLoader(): Promise<"forge" | "fabric"> {
-    const value = await getValue('modLoader');
+    const value = await getValue<string>('modLoader');
     if (!['forge', 'fabric'].includes(value))
-        throw new Error('Malformed JSON');
-    return value;
+        throw new Error('malformed JSON');
+    return value as "forge" | "fabric";
 }
 
 export async function addPackage(modSlug: string, isUserMod: boolean, dependencySlugs: string[]) {

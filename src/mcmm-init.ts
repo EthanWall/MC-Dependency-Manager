@@ -20,7 +20,8 @@ function promptVersionChoice(): Promise<string> {
         }
     ];
 
-    return inquirer.prompt(questions).then(answers => answers[0]);
+    return inquirer.prompt(questions)
+      .then((answers: { '0': string }) => answers[0]);
 }
 
 function promptModLoaderChoice(): Promise<"forge" | "fabric"> {
@@ -33,5 +34,6 @@ function promptModLoaderChoice(): Promise<"forge" | "fabric"> {
         }
     ];
 
-    return inquirer.prompt(questions).then(answers => answers[0]);
+    return inquirer.prompt(questions)
+      .then((answers: { '0': "forge" | "fabric" }) => answers[0]);
 }
