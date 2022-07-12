@@ -1,7 +1,7 @@
 import {getPackages, Package, PackageIndex, removePackage} from "./files.js";
 import fs from "fs";
 import path from "path";
-import {DOWNLOAD_PATH} from "./util.js";
+import { DOWNLOAD_PATH, getReferences } from "./util.js";
 
 export async function cmdRemove(userSlugs: Array<string>) {
     const packages = await getPackages();
@@ -71,11 +71,6 @@ export async function cmdRemove(userSlugs: Array<string>) {
     }));
 
     console.log(`Removed ${chainSlugs.length ? chainSlugs.join(', ') : 'nothing'}`);
-}
-
-function getReferences(slug: string, packages: PackageIndex): string[] {
-    const allDeps = Object.values(packages).flatMap(pkg => pkg.dependencies ?? []);
-    return allDeps.filter(str => str === slug);
 }
 
 function getPackageDependencies(slug: string, packages: PackageIndex, options?: { recursive?: boolean }): string[] {

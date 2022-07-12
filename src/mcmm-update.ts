@@ -1,26 +1,20 @@
-import {getGameVersion, getModLoader, getPackages} from "./files.js";
-import {downloadMod, getLatestModFile, getModFromSlug} from "./util.js";
-import {ModLoaderType} from "node-curseforge/dist/objects/enums.js";
-import type {Mod, ModFile} from "node-curseforge";
+import { getPackages, Package } from "./files.js";
+import { removeOrphanedPackages } from "./util.js";
+import { cmdInstall } from "./mcmm-install.js";
 
-// TODO: Make update fetch new deps from CurseForge
 export async function cmdUpdate() {
-    // Get options
-    const version = await getGameVersion();
-    const modLoaderType = ModLoaderType[(await getModLoader()).toUpperCase() as keyof typeof ModLoaderType];
+    const packages = await getPackages();
 
     // Find mods to install from the package file
-    const slugs = Object.keys(await getPackages());
-    const mods = await Promise.all(slugs.map(slug => getModFromSlug(slug)));
+    // Only try to update user-installed packages
+    const slugs = Object.keys(packages)
+      .filter(slug => (packages[slug] as Package).userMod);
 
-    // Find mod files
-    const modFiles = await Promise.all(mods.map(mod => getLatestModFile(mod, version, modLoaderType)));
+    // Update the mods
+    await cmdInstall(slugs);
 
-    // Download the mod files
-    for (let i = 0; i < mods.length; i++) {
-        const mod = mods[i] as Mod;
-        const modFile = modFiles[i] as ModFile;
-        const updated = await downloadMod(mod.slug, modFile);
-        if (updated) console.log(`Updated ${mod.slug}.`);
-    }
+    // Remove any orphaned mods (new versions of mods might not require the same deps as the old version)
+    await removeOrphanedPackages();
+
+    // TODO: Add logging to update cmd
 }

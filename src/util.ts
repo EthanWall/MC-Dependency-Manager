@@ -3,6 +3,7 @@ import {FileRelationType, ModLoaderType} from "node-curseforge/dist/objects/enum
 import {ModFileNotFoundError, ModNotFoundError} from "./errors.js";
 import path from "path";
 import fs from "fs";
+import { getPackages, Package, PackageIndex, removePackage } from "./files.js";
 
 const MODS_CLASS_ID = 6;
 export const DOWNLOAD_PATH = path.posix.join(process.cwd(), 'mods/');
@@ -152,4 +153,36 @@ export async function downloadMod(modSlug: string, modFile: ModFile, downloadDir
     }
 
     return true;
+}
+
+export function getReferences(slug: string, packages: PackageIndex): string[] {
+    const allDeps = Object.values(packages).flatMap(pkg => pkg.dependencies ?? []);
+    return allDeps.filter(str => str === slug);
+}
+
+export async function removeOrphanedPackages() {
+    // Gather packages
+    const packages = await getPackages();
+
+    // Find any packages without a parent
+    const packagesToRemove = Object.keys(packages)
+      .filter(slug =>
+        !((packages[slug] as Package).userMod) &&
+        getReferences(slug, packages).length === 0
+      );
+
+    // Remove the packages
+    for (const pkg of packagesToRemove) {
+        await removePackage(pkg);
+    }
+
+    // Delete the files
+    await Promise.all(packagesToRemove.map(async (slug) => {
+        // TODO: Move to function
+        let files = await fs.promises.readdir(DOWNLOAD_PATH);
+
+        // Find files matching the mod we're removing
+        files = files.filter(fn => fn.startsWith(`${slug}~`));
+        return Promise.all(files.map(file => fs.promises.unlink(path.posix.join(DOWNLOAD_PATH, file))));
+    }));
 }
