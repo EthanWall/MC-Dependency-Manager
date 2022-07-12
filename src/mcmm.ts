@@ -7,6 +7,7 @@ import {cmdUpdate} from "./mcmm-update.js";
 import {cmdRemove} from "./mcmm-remove.js";
 import {cmdInit} from "./mcmm-init.js";
 import {Curseforge} from "node-curseforge";
+import { removeOrphanedPackages } from "./util.js";
 
 declare global {
     // eslint-disable-next-line no-var
@@ -26,7 +27,7 @@ const program = new Command();
 program
     .name('mcmm')
     .description('The package manager for modded Minecraft')
-    .version('0.1.2');
+    .version('0.1.3');
 
 // mcmm search
 program
@@ -71,5 +72,12 @@ program
     .addArgument(new Argument('[modloader]', 'Minecraft mod loader')
         .choices(['forge', 'fabric']))
     .action(cmdInit);
+
+// mcmm autoremove
+program
+  .command('autoremove')
+  .description('removes orphaned mods')
+  .alias('prune')
+  .action(() => removeOrphanedPackages().then(() => console.log("Done!")))
 
 void program.parseAsync(process.argv);
