@@ -1,9 +1,35 @@
-import {getPackages, Package, PackageIndex, removePackage} from "./files.js";
+import { getPackages, Package, PackageIndex, parseRequirementsFile, removePackage } from "./files.js";
 import fs from "fs";
 import path from "path";
 import { DOWNLOAD_PATH, getReferences } from "./util.js";
+import { DoesNotExistError } from "./errors.js";
 
-export async function cmdRemove(userSlugs: Array<string>) {
+export async function cmdRemove(userSlugs?: Array<string>, options?: { requirements?: string }) {
+    if (!(userSlugs || options?.requirements)) {
+        console.error('error: slugs or a requirements file must be passed as an argument')
+        return;
+    }
+
+    userSlugs ??= [];
+    // Find slugs from a requirements file
+    if (options?.requirements) {
+        try {
+            const requirements = await parseRequirementsFile(options?.requirements)
+            userSlugs.push(...requirements);
+        } catch (err) {
+            if (err instanceof DoesNotExistError)
+                console.error(`error: ${err.message}`);
+            else
+                console.error(err);
+            return;
+        }
+    }
+
+    if (!userSlugs) {
+        console.error("error: requirements file is empty");
+        return;
+    }
+
     const packages = await getPackages();
 
     // Check if the argument exists in the package file

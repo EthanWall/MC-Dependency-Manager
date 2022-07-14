@@ -27,7 +27,7 @@ const program = new Command();
 program
     .name('mcmm')
     .description('The package manager for modded Minecraft')
-    .version('0.1.3');
+    .version('0.1.4');
 
 // mcmm search
 program
@@ -62,7 +62,8 @@ program
     .command('remove')
     .description('remove mods')
     .alias('rm')
-    .argument('<slugs...>', 'shorthand name for the mods to remove')
+    .argument('[slugs...]', 'shorthand name for the mods to remove')
+    .option('-r, --requirements <file>', 'relative or absolute path to a requirements file')
     .action(cmdRemove);
 
 // mcmm init
