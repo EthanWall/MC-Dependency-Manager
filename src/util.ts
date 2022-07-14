@@ -6,7 +6,7 @@ import fs from "fs";
 import { getPackages, Package, PackageIndex, removePackage } from "./files.js";
 
 const MODS_CLASS_ID = 6;
-export const DOWNLOAD_PATH = path.posix.join(process.cwd(), 'mods/');
+export const DOWNLOAD_PATH = path.posix.resolve('mods/');
 
 /**
  * Stringify and format an object into JSON

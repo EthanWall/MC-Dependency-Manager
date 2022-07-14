@@ -19,7 +19,7 @@ export interface PackageFile {
     mods: PackageIndex
 }
 
-export const PKG_FILE_PATH = path.posix.join(process.cwd(), 'mcmm.json');
+export const PKG_FILE_PATH = path.posix.resolve('mcmm.json');
 
 /**
  * Return an object from a JSON file
@@ -179,7 +179,7 @@ export async function setModLoader(modLoader: "forge" | "fabric") {
 export async function parseRequirementsFile(filePath: fs.PathLike): Promise<string[]> {
     let file;
     try {
-        file = await fs.promises.open(path.resolve(filePath.toString()), 'r');
+        file = await fs.promises.open(path.posix.resolve(filePath.toString()), 'r');
         return await file.readFile().then(buffer => splitNewlines(buffer.toString()));
     } catch (err) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
