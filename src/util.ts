@@ -160,7 +160,11 @@ export function getReferences(slug: string, packages: PackageIndex): string[] {
     return allDeps.filter(str => str === slug);
 }
 
-export async function removeOrphanedPackages() {
+/**
+ * Remove any dependency packages without a parent and delete their files
+ * @return number of packages removed
+ */
+export async function removeOrphanedPackages(): Promise<number> {
     // Gather packages
     const packages = await getPackages();
 
@@ -185,4 +189,11 @@ export async function removeOrphanedPackages() {
         files = files.filter(fn => fn.startsWith(`${slug}~`));
         return Promise.all(files.map(file => fs.promises.unlink(path.posix.join(DOWNLOAD_PATH, file))));
     }));
+
+    return packagesToRemove.length;
+}
+
+export function splitNewlines(str: string): string[] {
+    // Splits at a newline and removes any empty strings
+    return str.split(/\r?\n/).filter(element => element);
 }

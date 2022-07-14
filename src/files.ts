@@ -1,7 +1,8 @@
 import fs from "fs";
-import {formatJSON} from "./util.js";
+import { formatJSON, splitNewlines } from "./util.js";
 import {set, get, unset} from "lodash";
 import path from "path";
+import { DoesNotExistError } from "./errors.js";
 
 export interface Package {
     userMod: boolean,
@@ -173,4 +174,19 @@ export async function setGameVersion(gameVersion: string) {
 
 export async function setModLoader(modLoader: "forge" | "fabric") {
     await setValue('modLoader', modLoader);
+}
+
+export async function parseRequirementsFile(filePath: fs.PathLike): Promise<string[]> {
+    let file;
+    try {
+        file = await fs.promises.open(path.resolve(filePath.toString()), 'r');
+        return await file.readFile().then(buffer => splitNewlines(buffer.toString()));
+    } catch (err) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        if (err.code === 'ENOENT')
+            throw new DoesNotExistError("requirements file does not exist");
+        throw err;
+    } finally {
+        await file?.close()
+    }
 }

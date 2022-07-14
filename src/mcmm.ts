@@ -43,10 +43,11 @@ program
     .command('install')
     .description('install a mod')
     .alias('i')
-    .argument('<slugs...>', 'shorthand name for the mod')
+    .argument('[slugs...]', 'shorthand name for the mod')
     .option('-v, --version <version>', 'Minecraft version string')
     .addOption(new Option('-l, --modloader <name>', 'Minecraft mod loader')
         .choices(['forge', 'fabric']))
+    .option('-r, --requirements <file>', 'relative or absolute path to a requirements file')
     .action(cmdInstall);
 
 // mcmm update

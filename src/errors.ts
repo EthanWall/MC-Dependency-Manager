@@ -27,3 +27,11 @@ export class ModNotFoundError extends Error {
         this.modSlug = slug;
     }
 }
+
+export class DoesNotExistError extends Error {
+    constructor(message?: string) {
+        super(message);
+
+        Object.setPrototypeOf(this, DoesNotExistError.prototype);
+    }
+}
