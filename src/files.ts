@@ -2,7 +2,7 @@ import fs from "fs";
 import { formatJSON, splitNewlines } from "./util.js";
 import {set, get, unset} from "lodash";
 import path from "path";
-import { DoesNotExistError } from "./errors.js";
+import { DoesNotExistError, ExistsError } from "./errors.js";
 
 export interface Package {
     userMod: boolean,
@@ -24,6 +24,7 @@ export const PKG_FILE_PATH = path.posix.resolve('mcmm.json');
 /**
  * Return an object from a JSON file
  * @param key A decimal-seperated path to the object
+ * @throws {DoesNotExistError} PKG_FILE_PATH must be a valid file path
  */
 async function getValue<T>(key: string): Promise<T> {
   // TODO: Add error handling for wrongly typed return value
@@ -43,9 +44,8 @@ async function getValue<T>(key: string): Promise<T> {
     } catch (err) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         if (err.code === 'ENOENT')
-            throw new Error('file doesn\'t exist');
-        else
-            throw err;
+            throw new DoesNotExistError('file does not exist');
+        throw err;
     } finally {
         await file?.close();
     }
@@ -55,6 +55,7 @@ async function getValue<T>(key: string): Promise<T> {
  * Write a value to a JSON file
  * @param key A decimal-seperated path to the object
  * @param value An object that will be parsed into JSON
+ * @throws {DoesNotExistError} PKG_FILE_PATH must be a valid file path
  */
 async function setValue(key: string, value: unknown) {
     let file;
@@ -80,9 +81,8 @@ async function setValue(key: string, value: unknown) {
     } catch (err) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         if (err.code === 'ENOENT')
-            throw new Error('file doesn\'t exist');
-        else
-            throw err;
+            throw new DoesNotExistError('file does not exist');
+        throw err;
     } finally {
         await file?.close();
     }
@@ -91,6 +91,7 @@ async function setValue(key: string, value: unknown) {
 /**
  * Delete a value from a JSON file
  * @param key A decimal-seperated path to the object
+ * @throws {DoesNotExistError} PKG_FILE_PATH must be a valid file path
  */
 async function deleteValue(key: string) {
     let file;
@@ -116,9 +117,8 @@ async function deleteValue(key: string) {
     } catch (err) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         if (err.code === 'ENOENT')
-            throw new Error('file doesn\'t exist');
-        else
-            throw err;
+            throw new DoesNotExistError('file does not exist');
+        throw err;
     } finally {
         await file?.close();
     }
@@ -126,6 +126,7 @@ async function deleteValue(key: string) {
 
 /**
  * Creates a file in the correct format. Will not override an existing file
+ * @throws {ExistsError} PKG_FILE_PATH can't already exist
  */
 export async function initFile(version: string, modLoader: "forge" | "fabric") {
     const data: PackageFile = {version, modLoader, mods: {}};
@@ -136,9 +137,8 @@ export async function initFile(version: string, modLoader: "forge" | "fabric") {
     } catch (err) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         if (err.code === 'EEXIST')
-            throw new Error('file already exists');
-        else
-            throw err;
+            throw new ExistsError("file already exists")
+        throw err;
     } finally {
         await file?.close();
     }
@@ -176,6 +176,11 @@ export async function setModLoader(modLoader: "forge" | "fabric") {
     await setValue('modLoader', modLoader);
 }
 
+/**
+ * Parse a newline-seperated file of slugs into an array
+ * @param filePath Relative or absolute path to the file
+ * @throws {DoesNotExistError} filePath must be a valid file path
+ */
 export async function parseRequirementsFile(filePath: fs.PathLike): Promise<string[]> {
     let file;
     try {

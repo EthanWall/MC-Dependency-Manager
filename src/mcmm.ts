@@ -80,6 +80,6 @@ program
   .command('autoremove')
   .description('removes orphaned mods')
   .alias('prune')
-  .action(() => removeOrphanedPackages().then(() => console.log("Done!")))
+  .action(() => removeOrphanedPackages().then(slugs => console.log(`Removed ${slugs.join(", ")}.`)))
 
 void program.parseAsync(process.argv);

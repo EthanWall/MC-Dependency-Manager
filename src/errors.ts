@@ -35,3 +35,11 @@ export class DoesNotExistError extends Error {
         Object.setPrototypeOf(this, DoesNotExistError.prototype);
     }
 }
+
+export class ExistsError extends Error {
+    constructor(message?: string) {
+        super(message);
+
+        Object.setPrototypeOf(this, ExistsError.prototype);
+    }
+}
